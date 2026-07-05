@@ -8,30 +8,24 @@ import { useI18n } from "@/lib/i18n";
 import styles from './page.module.css';
 
 /* ─── Testimonial Data ─── */
-const testimonials = [
+const backgroundFacts = [
   {
-    name: 'Andi',
-    age: 26,
-    role: 'Fresh Graduate',
-    initials: 'A',
-    quoteId: 'Berkat KawalKontrak.ai, saya berhasil negosiasi 2 klausul berbahaya sebelum tanda tangan. Sekarang saya lebih percaya diri dengan kontrak kerja saya.',
-    quoteEn: 'Thanks to KawalKontrak.ai, I successfully negotiated 2 dangerous clauses before signing. Now I feel much more confident about my employment contract.'
+    titleId: '66% Pekerja Kontrak',
+    titleEn: '66% of Contract Workers',
+    descId: 'Tidak menerima pesangon saat kontrak berakhir karena ketidaktahuan atas hak yang tertulis (atau tidak tertulis) di SPK.',
+    descEn: 'Do not receive severance pay when their contract ends due to ignorance of their rights written in the contract.'
   },
   {
-    name: 'Siti',
-    age: 32,
-    role: 'Working Mother',
-    initials: 'S',
-    quoteId: 'Saya bandingkan kontrak lama dan baru. Ternyata ada penurunan benefit yang tidak saya sadari. Platform ini benar-benar membantu!',
-    quoteEn: 'I compared my old and new contracts. It turned out there was a drop in benefits that I hadn\'t realized. This platform really helps!'
+    titleId: 'Asimetri Informasi',
+    titleEn: 'Information Asymmetry',
+    descId: 'Bahasa hukum sengaja dibuat rumit (center-embedding) sehingga mayoritas orang menyetujui dokumen tanpa membaca atau memahami penuh implikasinya.',
+    descEn: 'Legal language is deliberately complex (center-embedding), causing most people to agree to documents without fully reading or understanding the implications.'
   },
   {
-    name: 'Budi',
-    age: 28,
-    role: 'Factory Worker',
-    initials: 'B',
-    quoteId: 'Akhirnya saya tahu upah lembur saya selama ini dibayar di bawah ketentuan UU. Sekarang saya bisa memperjuangkan hak saya.',
-    quoteEn: 'I finally found out that my overtime pay all this time was paid below the law standard. Now I can fight for my rights.'
+    titleId: '55% Pekerja Lembur',
+    titleEn: '55% of Overtime Workers',
+    descId: 'Pekerja tidak dibayar sesuai standar karena klausul lembur yang ambigu atau bersifat sepihak sejak awal penandatanganan kontrak.',
+    descEn: 'Workers are not paid according to standards due to ambiguous or one-sided overtime clauses from the moment the contract is signed.'
   },
 ];
 
@@ -44,18 +38,18 @@ export default function HomePage() {
   };
 
   const localizedFeatures = [
-    { icon: '🚨', title: t.feature_1_title, description: t.feature_1_desc },
-    { icon: '⏰', title: t.feature_2_title, description: t.feature_2_desc },
-    { icon: '💰', title: t.feature_3_title, description: t.feature_3_desc },
-    { icon: '❌', title: t.feature_4_title, description: t.feature_4_desc },
-    { icon: '📋', title: t.feature_5_title, description: t.feature_5_desc },
-    { icon: '⚖️', title: t.feature_6_title, description: t.feature_6_desc },
+    { title: t.feature_1_title, description: t.feature_1_desc },
+    { title: t.feature_2_title, description: t.feature_2_desc },
+    { title: t.feature_3_title, description: t.feature_3_desc },
+    { title: t.feature_4_title, description: t.feature_4_desc },
+    { title: t.feature_5_title, description: t.feature_5_desc },
+    { title: t.feature_6_title, description: t.feature_6_desc },
   ];
 
   const localizedSteps = [
-    { number: 1, icon: '📄', title: t.how_step1_title, description: t.how_step1_desc },
-    { number: 2, icon: '🤖', title: t.how_step2_title, description: t.how_step2_desc },
-    { number: 3, icon: '✅', title: t.how_step3_title, description: t.how_step3_desc },
+    { number: 1, title: t.how_step1_title, description: t.how_step1_desc },
+    { number: 2, title: t.how_step2_title, description: t.how_step2_desc },
+    { number: 3, title: t.how_step3_title, description: t.how_step3_desc },
   ];
 
   const localizedFaq = [
@@ -81,8 +75,6 @@ export default function HomePage() {
         </div>
 
         <div className={styles.heroContent} style={{ paddingTop: '80px' }}>
-          <span className={styles.heroBadge}>{t.hero_badge}</span>
-
           <h1 className={styles.heroTitle}>
             {t.hero_title_1}
             <span className={styles.heroTitleAccent}>{t.hero_title_accent}</span>
@@ -116,10 +108,6 @@ export default function HomePage() {
               <span className={styles.statLabel}>{t.hero_stat_data}</span>
             </div>
           </div>
-
-          <div className={styles.trustBadge}>
-            {t.hero_trust_badge}
-          </div>
         </div>
       </section>
 
@@ -137,7 +125,6 @@ export default function HomePage() {
           <div className={styles.featuresGrid}>
             {localizedFeatures.map((feature, index) => (
               <div key={index} className={styles.featureCard}>
-                <span className={styles.featureIcon}>{feature.icon}</span>
                 <h3 className={styles.featureTitle}>{feature.title}</h3>
                 <p className={styles.featureDescription}>{feature.description}</p>
               </div>
@@ -164,8 +151,7 @@ export default function HomePage() {
                 {index < localizedSteps.length - 1 && <div className={styles.stepConnector} />}
               </div>
               <div className={styles.stepContent}>
-                <span className={styles.stepIcon}>{step.icon}</span>
-                <h3 className={styles.stepTitle}>{step.title}</h3>
+                <h3 className={step.number ? '' : styles.stepTitle}>{step.title}</h3>
                 <p className={styles.stepDescription}>{step.description}</p>
               </div>
             </div>
@@ -185,20 +171,14 @@ export default function HomePage() {
           </div>
 
           <div className={styles.testimonialsGrid}>
-            {testimonials.map((testi, index) => (
-              <div key={index} className={styles.testimonialCard}>
-                <p className={styles.testimonialQuote}>
-                  {locale === 'id' ? testi.quoteId : testi.quoteEn}
+            {backgroundFacts.map((fact, index) => (
+              <div key={index} className={styles.testimonialCard} style={{ padding: 'var(--space-xl)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+                <h3 style={{ fontSize: 'var(--text-xl)', fontWeight: 700, color: 'var(--color-dark)', margin: 0 }}>
+                  {locale === 'id' ? fact.titleId : fact.titleEn}
+                </h3>
+                <p style={{ fontStyle: 'normal', color: 'var(--color-neutral-light)', fontSize: 'var(--text-base)', lineHeight: 1.6, margin: 0 }}>
+                  {locale === 'id' ? fact.descId : fact.descEn}
                 </p>
-                <div className={styles.testimonialAuthor}>
-                  <div className={styles.testimonialAvatar}>{testi.initials}</div>
-                  <div>
-                    <div className={styles.testimonialName}>
-                      {testi.name}, {testi.age}
-                    </div>
-                    <div className={styles.testimonialRole}>{testi.role}</div>
-                  </div>
-                </div>
               </div>
             ))}
           </div>

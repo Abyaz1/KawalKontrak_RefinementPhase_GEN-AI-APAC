@@ -70,7 +70,7 @@ const REGIONS = [
   'Lainnya',
 ];
 
-const LOADING_STEPS = [
+const LOADING_STEPS_ID = [
   'Membaca kontrak...',
   'Mendeteksi red flags...',
   'Mencari regulasi terkait...',
@@ -78,7 +78,15 @@ const LOADING_STEPS = [
   'Menyusun hasil...',
 ];
 
-const PLACEHOLDER_TEXT = `Contoh: 
+const LOADING_STEPS_EN = [
+  'Reading contract...',
+  'Detecting red flags...',
+  'Searching relevant regulations...',
+  'Deep AI analysis...',
+  'Compiling results...',
+];
+
+const PLACEHOLDER_TEXT_ID = `Contoh: 
 
 PERJANJIAN KERJA WAKTU TERTENTU (PKWT)
 
@@ -93,6 +101,22 @@ Pasal 2 - Jam Kerja
 Pihak Kedua wajib bekerja selama 10 jam per hari, 7 hari seminggu...
 
 Tempel seluruh teks kontrak kerja Anda di sini...`;
+
+const PLACEHOLDER_TEXT_EN = `Example: 
+
+FIXED-TERM EMPLOYMENT CONTRACT (PKWT)
+
+We, the undersigned:
+1. PT Maju Jaya Sentosa, located in Jakarta, hereinafter referred to as the FIRST PARTY (Employer)
+2. Budi Santoso, residing in Bandung, hereinafter referred to as the SECOND PARTY (Employee)
+
+Article 1 - Probationary Period
+The Second Party must undergo a probationary period of 3 months...
+
+Article 2 - Working Hours
+The Second Party is required to work 10 hours per day, 7 days a week...
+
+Paste your entire employment contract text here...`;
 
 /* ──────────────── Mock result for demo ──────────────── */
 
@@ -195,6 +219,105 @@ const MOCK_RESULT: AnalysisResult = {
   ],
 };
 
+const MOCK_RESULT_EN: AnalysisResult = {
+  riskLevel: 'HIGH',
+  riskLabel: 'High Risk',
+  riskDescription: 'This contract contains several clauses that could potentially disadvantage the worker and need to be renegotiated.',
+  totalFlags: 5,
+  severityCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 1, LOW: 1 },
+  redFlags: [
+    {
+      id: 1,
+      severity: 'CRITICAL',
+      title: 'Probation Period in Fixed-Term Contract (PKWT)',
+      excerpt: '"The Second Party is required to undergo a probationary period of 3 months without full salary..."',
+      explanation: 'Fixed-term contracts (PKWT) CANNOT require a probationary period. This directly violates the Indonesian Labor Law. This clause is null and void by law.',
+      legalRefs: ['Article 58 of Law No. 13/2003', 'Government Regulation No. 35/2021 Article 12'],
+      recommendation: 'Request the complete removal of the probationary clause. If the company refuses, request a status change to a permanent contract (PKWTT), which is legally allowed to have a probation period.',
+      emailTemplate: 'Dear HR PT Maju Jaya Sentosa,\n\nI would like to discuss Article 1 regarding the Probationary Period in the PKWT. Under Article 58 of Law No. 13 of 2003, fixed-term contracts may not require a probationary period. I kindly request that this clause be removed or that my work status be changed to PKWTT.\n\nThank you.',
+    },
+    {
+      id: 2,
+      severity: 'HIGH',
+      title: 'Working Hours Exceeding Legal Limit',
+      excerpt: '"The Second Party is required to work 10 hours per day, 7 days a week without overtime compensation..."',
+      explanation: 'Normal working hours are 7-8 hours/day and 40 hours/week. This contract requires 70 hours/week, nearly double the legal limit, without overtime pay.',
+      legalRefs: ['Article 77 of Law No. 13/2003', 'Article 78 of Law No. 13/2003'],
+      recommendation: 'Negotiate the working hours to a maximum of 8 hours/day and 40 hours/week. Ensure there are overtime provisions paying 1.5x for the first hour and 2x for subsequent hours.',
+      emailTemplate: 'Dear HR,\n\nReferring to Article 2 regarding Working Hours, I request an adjustment to 8 hours/day in accordance with Article 77 of the Labor Law, with overtime provisions as per Article 78.\n\nThank you.',
+    },
+    {
+      id: 3,
+      severity: 'HIGH',
+      title: 'No Provision for Annual Leave',
+      excerpt: 'The contract does not mention the worker\'s right to annual leave.',
+      explanation: 'Every worker who has worked for 12 consecutive months is entitled to a minimum of 12 days of annual leave. While the absence of this clause doesn\'t waive the right, it should be explicitly stated.',
+      legalRefs: ['Article 79 of Law No. 13/2003'],
+      recommendation: 'Add an explicit clause for annual leave of at least 12 working days after 12 months of service.',
+      emailTemplate: 'Dear HR,\n\nI kindly request the addition of a clause regarding annual leave rights of at least 12 working days in accordance with Article 79 of Law No. 13 of 2003.\n\nThank you.',
+    },
+    {
+      id: 4,
+      severity: 'MEDIUM',
+      title: 'Overly Broad Non-Compete Clause',
+      excerpt: '"The Second Party is prohibited from working in the same industry for 5 years after termination..."',
+      explanation: 'A 5-year non-compete clause is considered excessively long and potentially restricts the worker\'s constitutional right to make a living. A reasonable limit is usually 6–12 months.',
+      legalRefs: ['Article 1338 of the Civil Code (KUHPerdata)', 'Article 27 paragraph (2) of the 1945 Constitution'],
+      recommendation: 'Negotiate the duration to a maximum of 12 months with a more specific geographic and industry scope. Request financial compensation during the non-compete period.',
+      emailTemplate: 'Dear HR,\n\nI request the non-compete clause be revised to a maximum of 12 months, with proportional financial compensation.\n\nThank you.',
+    },
+    {
+      id: 5,
+      severity: 'LOW',
+      title: 'Vague Dispute Resolution Venue',
+      excerpt: '"All disputes shall be resolved amicably..."',
+      explanation: 'The dispute resolution clause is too general. It is best to specify the mechanism and forum for resolution.',
+      legalRefs: ['Law No. 2/2004 on PPHI'],
+      recommendation: 'Add a tiered mechanism: bipartite negotiation, mediation, and Industrial Relations Court (PHI) in accordance with the PPHI Law.',
+      emailTemplate: 'Dear HR,\n\nI suggest clarifying the dispute resolution clause with bipartite, mediation, and PHI mechanisms as per Law No. 2 of 2004.\n\nThank you.',
+    },
+  ],
+  safeClauses: [
+    {
+      id: 1,
+      title: 'Clear Wage Terms',
+      description: 'The contract explicitly mentions the wage amount, which is above the Jakarta Minimum Wage. This is in accordance with Article 88 of the Labor Law.',
+    },
+    {
+      id: 2,
+      title: 'Social Security (BPJS)',
+      description: 'The contract includes the employer\'s obligation to register the worker in BPJS Health and BPJS Employment in accordance with regulations.',
+    },
+    {
+      id: 3,
+      title: 'Detailed Job Description',
+      description: 'The contract contains a clear and detailed job description, reducing the risk of exploitation outside the agreed scope of work.',
+    },
+  ],
+  summary: {
+    contractType: 'PKWT (Fixed-Term Contract)',
+    duration: '12 Months',
+    salary: 'Rp 5,500,000/month',
+    mustChange: [
+      'Remove probationary clause (illegal for PKWT)',
+      'Adjust working hours to 40 hours/week',
+      'Add overtime provisions in accordance with the law',
+    ],
+    shouldChange: [
+      'Add explicit annual leave clause',
+      'Revise non-compete clause to 12 months',
+      'Clarify dispute resolution mechanism',
+    ],
+    finalRecommendation: 'This contract requires renegotiation of several critical clauses before being signed. The probationary clause in a PKWT is illegal and must be removed. Excessive working hours also violate the law. We advise bringing these points to HRD, referring to the cited legal articles. If the company refuses, consider consulting with LBH or a trade union.',
+  },
+  nextSteps: [
+    { text: 'Send a negotiation email to HR using the template provided, prioritizing CRITICAL clauses first.' },
+    { text: 'Do not sign the contract before the probationary clause is removed — this is a clear legal violation.' },
+    { text: 'Keep copies of your communication as evidence if needed in the future.' },
+    { text: 'If negotiation fails, contact LBH or Disnaker for free legal consultation.' },
+  ],
+};
+
 /* ──────────────── Component ──────────────── */
 
 /* ──────────────── History type ──────────────── */
@@ -260,6 +383,9 @@ async function readFileAsText(file: File): Promise<string> {
 export default function AnalisisPage() {
   const { t, locale, toggleLocale } = useI18n();
   const { theme, toggleTheme } = useTheme();
+
+  const loadingSteps = locale === 'id' ? LOADING_STEPS_ID : LOADING_STEPS_EN;
+  const placeholderText = locale === 'id' ? PLACEHOLDER_TEXT_ID : PLACEHOLDER_TEXT_EN;
 
   /* input state */
   const [inputTab, setInputTab] = useState<InputTab>('paste');
@@ -356,7 +482,7 @@ export default function AnalisisPage() {
     setActiveResultTab('flags');
 
     /* step-by-step progress */
-    for (let i = 0; i < LOADING_STEPS.length; i++) {
+    for (let i = 0; i < loadingSteps.length; i++) {
       await new Promise<void>((resolve) => setTimeout(resolve, 800 + Math.random() * 400));
       setCurrentStep(i + 1);
     }
@@ -389,13 +515,15 @@ export default function AnalisisPage() {
       const adaptedData: AnalysisResult = {
         riskLevel,
         riskLabel,
-        riskDescription: 'Berikut adalah hasil analisis kontrak Anda berdasarkan perundang-undangan.',
+        riskDescription: locale === 'id' 
+          ? 'Berikut adalah hasil analisis kontrak Anda berdasarkan perundang-undangan.'
+          : 'Below are the results of your contract analysis based on legislation.',
         totalFlags: apiData.red_flags?.length || 0,
         severityCounts,
         redFlags: (apiData.red_flags || []).map((f: any, i: number) => ({
           id: i + 1,
           severity: f.severity,
-          title: f.potensi_masalah ? (f.potensi_masalah.substring(0, 50) + '...') : 'Klausul Bermasalah',
+          title: f.potensi_masalah ? (f.potensi_masalah.substring(0, 50) + '...') : (locale === 'id' ? 'Klausul Bermasalah' : 'Problematic Clause'),
           excerpt: f.pasal_kontrak || '',
           explanation: f.potensi_masalah || '',
           legalRefs: f.referensi_uu?.map((r: any) => `${r.pasal} ${r.peraturan}`) || [],
@@ -404,16 +532,18 @@ export default function AnalisisPage() {
         })),
         safeClauses: (apiData.klausul_aman || []).map((c: any, i: number) => ({
           id: i + 1,
-          title: c.terjemahan ? (c.terjemahan.substring(0, 40) + '...') : 'Klausul Aman',
+          title: c.terjemahan ? (c.terjemahan.substring(0, 40) + '...') : (locale === 'id' ? 'Klausul Aman' : 'Safe Clause'),
           description: c.pasal_kontrak || ''
         })),
         summary: {
-          contractType: apiData.ringkasan?.jenis || 'Tidak Diketahui',
+          contractType: apiData.ringkasan?.jenis || (locale === 'id' ? 'Tidak Diketahui' : 'Unknown'),
           duration: apiData.ringkasan?.durasi || '-',
           salary: apiData.ringkasan?.gaji_bulanan || '-',
           mustChange: apiData.ringkasan?.harus_diubah || [],
           shouldChange: apiData.ringkasan?.sebaiknya_diubah || [],
-          finalRecommendation: 'Silakan pelajari langkah berikutnya untuk negosiasi.'
+          finalRecommendation: locale === 'id'
+            ? 'Silakan pelajari langkah berikutnya untuk negosiasi.'
+            : 'Please study the next steps for negotiation.'
         },
         nextSteps: (apiData.langkah_berikutnya || []).map((step: string) => ({ text: step }))
       };
@@ -424,7 +554,7 @@ export default function AnalisisPage() {
       // Save to history
       const entry: HistoryEntry = {
         id: `H-${Date.now()}`,
-        date: new Date().toLocaleString('id-ID'),
+        date: new Date().toLocaleString(locale === 'id' ? 'id-ID' : 'en-US'),
         riskLevel: adaptedData.riskLevel,
         riskLabel: adaptedData.riskLabel,
         totalFlags: adaptedData.totalFlags,
@@ -435,10 +565,10 @@ export default function AnalisisPage() {
       saveHistory(updated);
     } catch {
       /* fallback to mock for demo */
-      setAnalysisResult(MOCK_RESULT);
+      setAnalysisResult(locale === 'id' ? MOCK_RESULT : MOCK_RESULT_EN);
       setAnalysisState('done');
     }
-  }, [inputTab, contractText, fileText, region, t, history]);
+  }, [inputTab, contractText, fileText, region, t, locale, loadingSteps, history]);
 
   /* ──── actions ──── */
 
@@ -551,10 +681,9 @@ export default function AnalisisPage() {
       <div className={s.layout}>
         {/* ════════ INPUT PANEL ════════ */}
         <section className={s.inputPanel}>
-          <h1 className={s.inputTitle}>Analisis Kontrak Kerja</h1>
+          <h1 className={s.inputTitle}>{t.analysis_title}</h1>
           <p className={s.inputSubtitle}>
-            Tempel teks atau upload file kontrak kerja Anda. AI kami akan mendeteksi klausul
-            bermasalah dan memberikan rekomendasi hukum.
+            {t.analysis_subtitle}
           </p>
 
           {/* Tab toggle */}
@@ -564,14 +693,14 @@ export default function AnalisisPage() {
               onClick={() => setInputTab('paste')}
               type="button"
             >
-              📝 Tempel Teks
+              {t.analysis_tab_paste}
             </button>
             <button
               className={`${s.tabBtn} ${inputTab === 'upload' ? s.tabBtnActive : ''}`}
               onClick={() => setInputTab('upload')}
               type="button"
             >
-              📄 Upload File
+              {t.analysis_tab_upload}
             </button>
           </div>
 
@@ -579,10 +708,10 @@ export default function AnalisisPage() {
           {inputTab === 'paste' && (
             <textarea
               className={s.textarea}
-              placeholder={PLACEHOLDER_TEXT}
+              placeholder={placeholderText}
               value={contractText}
               onChange={(e) => setContractText(e.target.value)}
-              aria-label="Tempel teks kontrak kerja"
+              aria-label={locale === 'id' ? 'Tempel teks kontrak kerja' : 'Paste employment contract text'}
             />
           )}
 
@@ -600,17 +729,17 @@ export default function AnalisisPage() {
                 onClick={() => fileInputRef.current?.click()}
                 role="button"
                 tabIndex={0}
-                aria-label="Upload file kontrak"
+                aria-label={locale === 'id' ? 'Unggah file kontrak' : 'Upload contract file'}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
                 }}
               >
                 <div className={s.dropZoneIcon}>📂</div>
                 <div className={s.dropZoneText}>
-                  Seret &amp; lepas file di sini, atau klik untuk memilih
+                  {t.analysis_drop_title}
                 </div>
                 <div className={s.dropZoneSub}>
-                  Format: PDF, TXT · Maks 10 MB
+                  {t.analysis_drop_sub}
                 </div>
                 <input
                   ref={fileInputRef}
@@ -634,7 +763,7 @@ export default function AnalisisPage() {
                       e.stopPropagation();
                       setFile(null);
                     }}
-                    aria-label="Hapus file"
+                    aria-label={locale === 'id' ? 'Hapus file' : 'Remove file'}
                     type="button"
                   >
                     ✕
@@ -647,7 +776,7 @@ export default function AnalisisPage() {
           {/* Region selector */}
           <div className={s.fieldGroup}>
             <label className={s.fieldLabel} htmlFor="region-select">
-              Wilayah Kerja
+              {t.analysis_region_label}
             </label>
             <select
               id="region-select"
@@ -670,11 +799,11 @@ export default function AnalisisPage() {
             onClick={runAnalysis}
             type="button"
           >
-            ANALISIS KONTRAK →
+            {t.analysis_cta}
           </button>
 
           <div className={s.privacyTip}>
-            🔒 Kontrak Anda tidak disimpan di server kami
+            {t.analysis_privacy}
           </div>
         </section>
 
@@ -684,10 +813,9 @@ export default function AnalisisPage() {
           {analysisState === 'idle' && (
             <div className={s.emptyState}>
               <div className={s.emptyIcon}>📋</div>
-              <h2 className={s.emptyTitle}>Belum Ada Hasil</h2>
+              <h2 className={s.emptyTitle}>{t.analysis_empty_title}</h2>
               <p className={s.emptyText}>
-                Masukkan teks kontrak kerja Anda untuk memulai analisis. AI kami akan memeriksa
-                klausul bermasalah dan memberikan rekomendasi hukum yang akurat.
+                {t.analysis_empty_desc}
               </p>
             </div>
           )}
@@ -695,10 +823,10 @@ export default function AnalisisPage() {
           {/* ── Loading ── */}
           {analysisState === 'loading' && (
             <div className={s.loadingState}>
-              <h2 className={s.loadingTitle}>Menganalisis Kontrak...</h2>
+              <h2 className={s.loadingTitle}>{t.analysis_loading}</h2>
 
               <div className={s.steps}>
-                {LOADING_STEPS.map((label, i) => {
+                {loadingSteps.map((label, i) => {
                   const done = i < currentStep;
                   const active = i === currentStep;
                   return (
@@ -718,7 +846,7 @@ export default function AnalisisPage() {
               <div className={s.progressBarOuter}>
                 <div
                   className={s.progressBarInner}
-                  style={{ width: `${(currentStep / LOADING_STEPS.length) * 100}%` }}
+                  style={{ width: `${(currentStep / loadingSteps.length) * 100}%` }}
                 />
               </div>
             </div>
@@ -728,13 +856,12 @@ export default function AnalisisPage() {
           {analysisState === 'error' && (
             <div className={s.errorState}>
               <div className={s.errorIcon}>⚠️</div>
-              <h2 className={s.errorTitle}>Terjadi Kesalahan</h2>
+              <h2 className={s.errorTitle}>{t.analysis_error_title}</h2>
               <p className={s.errorText}>
-                Maaf, kami tidak dapat menganalisis kontrak Anda saat ini. Silakan periksa koneksi
-                internet Anda dan coba lagi.
+                {t.analysis_error_desc}
               </p>
               <button className={s.retryBtn} onClick={runAnalysis} type="button">
-                🔄 Coba Lagi
+                {t.analysis_retry}
               </button>
             </div>
           )}
@@ -744,7 +871,7 @@ export default function AnalisisPage() {
             <div className={s.resultsContent}>
               {/* Risk banner */}
               <div className={`${s.riskBanner} ${riskBannerClass(analysisResult.riskLevel)}`}>
-                <div className={s.riskLabel}>Tingkat Risiko</div>
+                <div className={s.riskLabel}>{t.analysis_risk_label}</div>
                 <div className={s.riskLevel}>{analysisResult.riskLabel}</div>
                 <div className={s.riskSub}>{analysisResult.riskDescription}</div>
               </div>
@@ -753,7 +880,7 @@ export default function AnalisisPage() {
               <div className={s.statsBar}>
                 <div className={s.statItem}>
                   <div className={s.statValue}>{analysisResult.totalFlags}</div>
-                  <div className={s.statLabel}>Total Red Flags</div>
+                  <div className={s.statLabel}>{t.analysis_total_flags}</div>
                 </div>
                 {(Object.entries(analysisResult.severityCounts) as [Severity, number][]).map(
                   ([sev, count]) => (
@@ -768,17 +895,17 @@ export default function AnalisisPage() {
               {/* Action buttons */}
               <div className={s.actionBtns}>
                 <button className={s.actionBtn} onClick={handleShare} type="button">
-                  🔗 Bagikan
+                  {t.analysis_share}
                 </button>
                 <button className={s.actionBtn} onClick={handleDownloadPDF} type="button">
-                  📥 Download PDF
+                  {t.analysis_download}
                 </button>
                 <button
                   className={`${s.actionBtn} ${s.actionBtnPrimary}`}
                   onClick={handleNewAnalysis}
                   type="button"
                 >
-                  ✨ Analisis Baru
+                  {t.analysis_new}
                 </button>
               </div>
 
@@ -789,7 +916,7 @@ export default function AnalisisPage() {
                   onClick={() => setActiveResultTab('flags')}
                   type="button"
                 >
-                  Red Flags
+                  {t.analysis_tab_flags}
                   <span className={s.resultTabBadge}>{analysisResult.redFlags.length}</span>
                 </button>
                 <button
@@ -797,7 +924,7 @@ export default function AnalisisPage() {
                   onClick={() => setActiveResultTab('safe')}
                   type="button"
                 >
-                  Klausul Aman
+                  {t.analysis_tab_safe}
                   <span className={`${s.resultTabBadge} ${s.resultTabBadgeGreen}`}>
                     {analysisResult.safeClauses.length}
                   </span>
@@ -807,7 +934,7 @@ export default function AnalisisPage() {
                   onClick={() => setActiveResultTab('summary')}
                   type="button"
                 >
-                  Ringkasan
+                  {t.analysis_tab_summary}
                 </button>
               </div>
 
@@ -846,23 +973,23 @@ export default function AnalisisPage() {
                         <div className={s.flagExcerpt}>{flag.excerpt}</div>
 
                         <div className={s.flagSection}>
-                          <div className={s.flagSectionTitle}>Mengapa Berbahaya</div>
+                          <div className={s.flagSectionTitle}>{t.analysis_why_dangerous}</div>
                           <div className={s.flagSectionText}>{flag.explanation}</div>
                         </div>
 
                         <div className={s.flagSection}>
-                          <div className={s.flagSectionTitle}>Dasar Hukum</div>
+                          <div className={s.flagSectionTitle}>{t.analysis_legal_basis}</div>
                           <div>
                             {flag.legalRefs.map((ref, i) => (
                               <span key={i} className={s.legalRef}>
-                                ⚖️ {ref}
+                                {ref}
                               </span>
                             ))}
                           </div>
                         </div>
 
                         <div className={s.flagSection}>
-                          <div className={s.flagSectionTitle}>Rekomendasi Negosiasi</div>
+                          <div className={s.flagSectionTitle}>{t.analysis_recommendation}</div>
                           <div className={s.flagSectionText}>{flag.recommendation}</div>
                         </div>
 
@@ -871,7 +998,7 @@ export default function AnalisisPage() {
                           onClick={() => handleCopyEmail(flag.emailTemplate)}
                           type="button"
                         >
-                          ✉️ Salin Template Email
+                          {t.analysis_copy_email}
                         </button>
                       </div>
                     </div>
@@ -885,7 +1012,7 @@ export default function AnalisisPage() {
                   {analysisResult.safeClauses.map((clause) => (
                     <div key={clause.id} className={s.safeCard}>
                       <div className={s.safeTitle}>
-                        ✅ {clause.title}
+                        {clause.title}
                       </div>
                       <div className={s.safeText}>{clause.description}</div>
                     </div>
@@ -898,28 +1025,29 @@ export default function AnalisisPage() {
                 <div>
                   <div className={s.summaryGrid}>
                     <div className={s.summaryItem}>
-                      <div className={s.summaryItemLabel}>Jenis Kontrak</div>
+                      <div className={s.summaryItemLabel}>{t.analysis_contract_type}</div>
                       <div className={s.summaryItemValue}>
                         {analysisResult.summary.contractType}
                       </div>
                     </div>
                     <div className={s.summaryItem}>
-                      <div className={s.summaryItemLabel}>Durasi</div>
+                      <div className={s.summaryItemLabel}>{t.analysis_duration}</div>
                       <div className={s.summaryItemValue}>{analysisResult.summary.duration}</div>
                     </div>
                     <div className={s.summaryItem}>
-                      <div className={s.summaryItemLabel}>Gaji</div>
+                      <div className={s.summaryItemLabel}>{t.analysis_salary}</div>
                       <div className={s.summaryItemValue}>{analysisResult.summary.salary}</div>
                     </div>
                     <div className={s.summaryItem}>
-                      <div className={s.summaryItemLabel}>Wilayah</div>
+                      <div className={s.summaryItemLabel}>{t.analysis_region}</div>
                       <div className={s.summaryItemValue}>{region}</div>
                     </div>
                   </div>
 
                   {/* Must change */}
                   <div className={s.checklistTitle}>
-                    🔴 Harus Diubah ({analysisResult.summary.mustChange.length})
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-risk-critical)', marginRight: '8px', transform: 'translateY(-1px)' }} />
+                    {t.analysis_must_change} ({analysisResult.summary.mustChange.length})
                   </div>
                   {analysisResult.summary.mustChange.map((item, i) => (
                     <div key={i} className={s.checklistItem}>
@@ -930,7 +1058,8 @@ export default function AnalisisPage() {
 
                   {/* Should change */}
                   <div className={s.checklistTitle} style={{ marginTop: 20 }}>
-                    🟠 Sebaiknya Diubah ({analysisResult.summary.shouldChange.length})
+                    <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-risk-high)', marginRight: '8px', transform: 'translateY(-1px)' }} />
+                    {t.analysis_should_change} ({analysisResult.summary.shouldChange.length})
                   </div>
                   {analysisResult.summary.shouldChange.map((item, i) => (
                     <div key={i} className={s.checklistItem}>
@@ -941,7 +1070,7 @@ export default function AnalisisPage() {
 
                   {/* Final recommendation */}
                   <div className={s.finalReco}>
-                    <div className={s.finalRecoTitle}>💡 Rekomendasi Akhir</div>
+                    <div className={s.finalRecoTitle}>{t.analysis_final_reco}</div>
                     <div className={s.finalRecoText}>
                       {analysisResult.summary.finalRecommendation}
                     </div>
@@ -949,7 +1078,7 @@ export default function AnalisisPage() {
 
                   {/* Next Steps */}
                   <div className={s.nextSteps}>
-                    <div className={s.nextStepsTitle}>Langkah Selanjutnya</div>
+                    <div className={s.nextStepsTitle}>{t.analysis_next_steps}</div>
                     {analysisResult.nextSteps.map((step, i) => (
                       <div key={i} className={s.nextStepItem}>
                         <span className={s.nextStepNum}>{i + 1}</span>
@@ -958,14 +1087,27 @@ export default function AnalisisPage() {
                     ))}
 
                     <div className={s.lbhContact}>
-                      <div className={s.lbhTitle}>📞 Butuh Bantuan Hukum?</div>
+                      <div className={s.lbhTitle}>{t.analysis_need_help}</div>
                       <div className={s.lbhText}>
-                        <strong>LBH Jakarta:</strong> (021) 3145518
-                        <br />
-                        <strong>Posbakum Pengadilan Hubungan Industrial</strong> — Konsultasi gratis
-                        bagi pekerja. Kunjungi kantor PHI terdekat di wilayah Anda.
-                        <br />
-                        <strong>Kemnaker Hotline:</strong> 1500-630
+                        {locale === 'id' ? (
+                          <>
+                            <strong>LBH Jakarta:</strong> (021) 3145518
+                            <br />
+                            <strong>Posbakum Pengadilan Hubungan Industrial</strong> — Konsultasi gratis
+                            bagi pekerja. Kunjungi kantor PHI terdekat di wilayah Anda.
+                            <br />
+                            <strong>Kemnaker Hotline:</strong> 1500-630
+                          </>
+                        ) : (
+                          <>
+                            <strong>LBH Jakarta:</strong> (021) 3145518
+                            <br />
+                            <strong>Court Legal Aid Post (Posbakum PHI)</strong> — Free consultation
+                            for workers. Visit the nearest PHI office in your region.
+                            <br />
+                            <strong>Ministry of Manpower Hotline:</strong> 1500-630
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>

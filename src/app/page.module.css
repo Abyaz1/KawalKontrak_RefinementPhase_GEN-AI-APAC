@@ -303,7 +303,22 @@
   justify-content: center;
   padding: 120px var(--space-lg) var(--space-4xl);
   overflow: hidden;
-  background: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 30%, #f5f0ff 60%, #fff 100%);
+  background-image: url('/office_bg.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--color-bg) 0%, rgba(255, 255, 255, 0.6) 50%, var(--color-bg) 100%);
+  z-index: 1;
+}
+
+:global([data-theme='dark']) .hero::before {
+  background: linear-gradient(180deg, var(--color-bg) 0%, rgba(15, 23, 42, 0.8) 50%, var(--color-bg) 100%);
 }
 
 .heroBackground {
@@ -311,6 +326,7 @@
   inset: 0;
   overflow: hidden;
   pointer-events: none;
+  z-index: 1;
 }
 
 .heroBlob {
@@ -349,7 +365,7 @@
 
 .heroContent {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   max-width: 800px;
   text-align: center;
   animation: fadeInUp 0.8s ease-out;

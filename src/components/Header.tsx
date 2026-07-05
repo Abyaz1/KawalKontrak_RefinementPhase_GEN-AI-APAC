@@ -28,10 +28,16 @@ export function Header() {
   return (
     <header className={`${s.header} ${scrolled ? s.headerScrolled : ''}`}>
       <nav className={s.nav}>
-        <Link href="/" className={s.logo} onClick={closeMobile}>
-          <span className={s.logoIcon}>🛡️</span>
-          <span>KawalKontrak<span style={{ color: 'var(--color-brand-light)' }}>.ai</span></span>
-        </Link>
+        <div className={s.navLeft}>
+          <Link href="/" className={s.logo} onClick={closeMobile}>
+            <span>KawalKontrak<span style={{ color: 'var(--color-brand-light)' }}>.ai</span></span>
+          </Link>
+
+          <div className={s.privacyBadge}>
+            <span className={s.privacyDot} />
+            {t.hero_trust_badge}
+          </div>
+        </div>
 
         <div className={s.navRight}>
           <ul className={s.navLinks}>
@@ -66,11 +72,15 @@ export function Header() {
           <div className={s.controls}>
             <button
               onClick={toggleTheme}
-              className={s.controlBtn}
+              className={s.themeToggleSwitch}
               aria-label="Toggle theme"
               title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
             >
-              {theme === 'dark' ? '☀️' : '🌙'}
+              <div className={s.themeToggleTrack}>
+                <span className={s.themeIconLight}>☀️</span>
+                <span className={s.themeIconDark}>🌙</span>
+                <div className={`${s.themeToggleThumb} ${theme === 'dark' ? s.themeToggleThumbDark : ''}`} />
+              </div>
             </button>
 
             <button
