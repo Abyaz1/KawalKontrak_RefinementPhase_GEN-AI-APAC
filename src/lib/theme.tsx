@@ -19,10 +19,12 @@ const ThemeContext = createContext<ThemeContextType>({
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount — localStorage hanya ada di client,
+  // sehingga sinkronisasi state awal memang harus lewat effect (SSR-safe)
   useEffect(() => {
     const saved = localStorage.getItem('kk-theme') as Theme | null;
     if (saved && (saved === 'light' || saved === 'dark')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setThemeState(saved);
       document.documentElement.setAttribute('data-theme', saved);
     } else {

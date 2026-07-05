@@ -1,11 +1,10 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, DragEvent, ChangeEvent } from 'react';
-import Link from 'next/link';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useI18n } from '@/lib/i18n';
-import { useTheme } from '@/lib/theme';
+import type { AnalysisResult as ApiAnalysisResult } from '@/types';
 import s from './page.module.css';
 
 /* ──────────────── Types ──────────────── */
@@ -52,6 +51,7 @@ interface AnalysisResult {
   safeClauses: SafeClause[];
   summary: Summary;
   nextSteps: NextStep[];
+  disclaimer: string;
 }
 
 type AnalysisState = 'idle' | 'loading' | 'done' | 'error';
@@ -118,206 +118,6 @@ The Second Party is required to work 10 hours per day, 7 days a week...
 
 Paste your entire employment contract text here...`;
 
-/* ──────────────── Mock result for demo ──────────────── */
-
-const MOCK_RESULT: AnalysisResult = {
-  riskLevel: 'HIGH',
-  riskLabel: 'Risiko Tinggi',
-  riskDescription: 'Kontrak ini mengandung beberapa klausul yang berpotensi merugikan pekerja dan perlu dinegosiasi ulang.',
-  totalFlags: 5,
-  severityCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 1, LOW: 1 },
-  redFlags: [
-    {
-      id: 1,
-      severity: 'CRITICAL',
-      title: 'Masa Percobaan pada PKWT',
-      excerpt: '"Pihak Kedua wajib menjalani masa percobaan selama 3 bulan tanpa gaji penuh..."',
-      explanation: 'PKWT (Perjanjian Kerja Waktu Tertentu) TIDAK BOLEH mensyaratkan masa percobaan. Ini melanggar UU Ketenagakerjaan secara langsung. Klausul ini batal demi hukum.',
-      legalRefs: ['Pasal 58 UU No. 13/2003', 'PP No. 35/2021 Pasal 12'],
-      recommendation: 'Minta penghapusan klausul masa percobaan sepenuhnya. Jika perusahaan menolak, minta perubahan status menjadi PKWTT (karyawan tetap) yang memang diperbolehkan memiliki masa percobaan.',
-      emailTemplate: 'Yth. HRD PT Maju Jaya Sentosa,\n\nSaya ingin mendiskusikan Pasal 1 mengenai Masa Percobaan dalam PKWT. Berdasarkan Pasal 58 UU No. 13 Tahun 2003, PKWT tidak boleh mensyaratkan masa percobaan. Saya mohon klausul ini dapat dihapus atau status kerja diubah menjadi PKWTT.\n\nTerima kasih.',
-    },
-    {
-      id: 2,
-      severity: 'HIGH',
-      title: 'Jam Kerja Melebihi Batas',
-      excerpt: '"Pihak Kedua wajib bekerja selama 10 jam per hari, 7 hari seminggu tanpa kompensasi lembur..."',
-      explanation: 'Jam kerja normal adalah 7-8 jam/hari dan 40 jam/minggu. Kontrak ini mewajibkan 70 jam/minggu, hampir dua kali lipat dari batas legal, tanpa lembur.',
-      legalRefs: ['Pasal 77 UU No. 13/2003', 'Pasal 78 UU No. 13/2003'],
-      recommendation: 'Negosiasikan jam kerja menjadi maksimal 8 jam/hari dan 40 jam/minggu. Pastikan ada ketentuan lembur dengan upah 1.5x untuk jam pertama dan 2x untuk jam berikutnya.',
-      emailTemplate: 'Yth. HRD,\n\nMerujuk pada Pasal 2 tentang Jam Kerja, saya mohon penyesuaian menjadi 8 jam/hari sesuai Pasal 77 UU Ketenagakerjaan, dengan ketentuan lembur sesuai Pasal 78.\n\nTerima kasih.',
-    },
-    {
-      id: 3,
-      severity: 'HIGH',
-      title: 'Tidak Ada Ketentuan Cuti Tahunan',
-      excerpt: 'Kontrak tidak menyebutkan hak cuti tahunan pekerja.',
-      explanation: 'Setiap pekerja yang telah bekerja 12 bulan berturut-turut berhak atas cuti tahunan minimal 12 hari kerja. Absennya klausul ini bukan berarti hak tersebut hilang, namun sebaiknya dicantumkan secara eksplisit.',
-      legalRefs: ['Pasal 79 UU No. 13/2003'],
-      recommendation: 'Tambahkan klausul cuti tahunan minimal 12 hari kerja setelah 12 bulan masa kerja.',
-      emailTemplate: 'Yth. HRD,\n\nSaya mohon ditambahkan klausul mengenai hak cuti tahunan sekurang-kurangnya 12 hari kerja sesuai Pasal 79 UU No. 13 Tahun 2003.\n\nTerima kasih.',
-    },
-    {
-      id: 4,
-      severity: 'MEDIUM',
-      title: 'Klausul Non-Kompetisi Terlalu Luas',
-      excerpt: '"Pihak Kedua dilarang bekerja di industri yang sama selama 5 tahun setelah berakhirnya perjanjian ini..."',
-      explanation: 'Klausul non-kompetisi selama 5 tahun dinilai terlalu lama dan berpotensi membatasi hak pekerja untuk mencari nafkah. Umumnya batas wajar adalah 6–12 bulan.',
-      legalRefs: ['Pasal 1338 KUHPerdata', 'Pasal 27 ayat (2) UUD 1945'],
-      recommendation: 'Negosiasikan durasi menjadi maksimal 12 bulan dengan cakupan geografis dan industri yang lebih spesifik. Minta kompensasi finansial selama masa non-kompetisi.',
-      emailTemplate: 'Yth. HRD,\n\nSaya mohon revisi klausul non-kompetisi menjadi maksimal 12 bulan dengan kompensasi finansial yang proporsional.\n\nTerima kasih.',
-    },
-    {
-      id: 5,
-      severity: 'LOW',
-      title: 'Tempat Penyelesaian Sengketa Tidak Jelas',
-      excerpt: '"Segala sengketa diselesaikan secara musyawarah..."',
-      explanation: 'Klausul penyelesaian sengketa terlalu umum. Sebaiknya disebutkan secara spesifik mekanisme dan forum penyelesaiannya.',
-      legalRefs: ['UU No. 2/2004 tentang PPHI'],
-      recommendation: 'Tambahkan mekanisme bertahap: bipartit, mediasi, dan Pengadilan Hubungan Industrial (PHI) sesuai UU PPHI.',
-      emailTemplate: 'Yth. HRD,\n\nSaya mengusulkan klausul penyelesaian sengketa diperjelas dengan mekanisme bipartit, mediasi, dan PHI sesuai UU No. 2 Tahun 2004.\n\nTerima kasih.',
-    },
-  ],
-  safeClauses: [
-    {
-      id: 1,
-      title: 'Ketentuan Upah Jelas',
-      description: 'Kontrak menyebutkan besaran upah secara eksplisit dan di atas UMR Jakarta. Ini sudah sesuai dengan ketentuan Pasal 88 UU Ketenagakerjaan.',
-    },
-    {
-      id: 2,
-      title: 'Jaminan Sosial (BPJS)',
-      description: 'Kontrak mencantumkan kewajiban pemberi kerja untuk mendaftarkan pekerja dalam BPJS Kesehatan dan BPJS Ketenagakerjaan sesuai peraturan yang berlaku.',
-    },
-    {
-      id: 3,
-      title: 'Deskripsi Pekerjaan Terperinci',
-      description: 'Kontrak memuat deskripsi pekerjaan yang jelas dan terperinci, mengurangi risiko eksploitasi di luar lingkup tugas yang disepakati.',
-    },
-  ],
-  summary: {
-    contractType: 'PKWT (Kontrak Waktu Tertentu)',
-    duration: '12 Bulan',
-    salary: 'Rp 5.500.000/bulan',
-    mustChange: [
-      'Hapus klausul masa percobaan (ilegal untuk PKWT)',
-      'Sesuaikan jam kerja menjadi 40 jam/minggu',
-      'Tambahkan ketentuan lembur sesuai UU',
-    ],
-    shouldChange: [
-      'Tambahkan klausul cuti tahunan eksplisit',
-      'Revisi klausul non-kompetisi menjadi 12 bulan',
-      'Perjelas mekanisme penyelesaian sengketa',
-    ],
-    finalRecommendation: 'Kontrak ini memerlukan negosiasi ulang pada beberapa klausul kritis sebelum ditandatangani. Klausul masa percobaan pada PKWT bersifat ilegal dan harus dihapus. Jam kerja yang berlebihan juga melanggar undang-undang. Kami sarankan untuk membawa poin-poin ini ke HRD dengan merujuk pada pasal-pasal hukum yang disebutkan. Jika perusahaan menolak perubahan, pertimbangkan untuk berkonsultasi dengan LBH atau serikat pekerja.',
-  },
-  nextSteps: [
-    { text: 'Kirim email negosiasi ke HRD menggunakan template yang disediakan, prioritaskan klausul CRITICAL terlebih dahulu.' },
-    { text: 'Jangan tanda tangani kontrak sebelum klausul masa percobaan dihapus — ini adalah pelanggaran hukum yang jelas.' },
-    { text: 'Simpan salinan komunikasi Anda sebagai bukti jika diperlukan di kemudian hari.' },
-    { text: 'Jika negosiasi gagal, hubungi LBH atau Disnaker untuk konsultasi hukum gratis.' },
-  ],
-};
-
-const MOCK_RESULT_EN: AnalysisResult = {
-  riskLevel: 'HIGH',
-  riskLabel: 'High Risk',
-  riskDescription: 'This contract contains several clauses that could potentially disadvantage the worker and need to be renegotiated.',
-  totalFlags: 5,
-  severityCounts: { CRITICAL: 1, HIGH: 2, MEDIUM: 1, LOW: 1 },
-  redFlags: [
-    {
-      id: 1,
-      severity: 'CRITICAL',
-      title: 'Probation Period in Fixed-Term Contract (PKWT)',
-      excerpt: '"The Second Party is required to undergo a probationary period of 3 months without full salary..."',
-      explanation: 'Fixed-term contracts (PKWT) CANNOT require a probationary period. This directly violates the Indonesian Labor Law. This clause is null and void by law.',
-      legalRefs: ['Article 58 of Law No. 13/2003', 'Government Regulation No. 35/2021 Article 12'],
-      recommendation: 'Request the complete removal of the probationary clause. If the company refuses, request a status change to a permanent contract (PKWTT), which is legally allowed to have a probation period.',
-      emailTemplate: 'Dear HR PT Maju Jaya Sentosa,\n\nI would like to discuss Article 1 regarding the Probationary Period in the PKWT. Under Article 58 of Law No. 13 of 2003, fixed-term contracts may not require a probationary period. I kindly request that this clause be removed or that my work status be changed to PKWTT.\n\nThank you.',
-    },
-    {
-      id: 2,
-      severity: 'HIGH',
-      title: 'Working Hours Exceeding Legal Limit',
-      excerpt: '"The Second Party is required to work 10 hours per day, 7 days a week without overtime compensation..."',
-      explanation: 'Normal working hours are 7-8 hours/day and 40 hours/week. This contract requires 70 hours/week, nearly double the legal limit, without overtime pay.',
-      legalRefs: ['Article 77 of Law No. 13/2003', 'Article 78 of Law No. 13/2003'],
-      recommendation: 'Negotiate the working hours to a maximum of 8 hours/day and 40 hours/week. Ensure there are overtime provisions paying 1.5x for the first hour and 2x for subsequent hours.',
-      emailTemplate: 'Dear HR,\n\nReferring to Article 2 regarding Working Hours, I request an adjustment to 8 hours/day in accordance with Article 77 of the Labor Law, with overtime provisions as per Article 78.\n\nThank you.',
-    },
-    {
-      id: 3,
-      severity: 'HIGH',
-      title: 'No Provision for Annual Leave',
-      excerpt: 'The contract does not mention the worker\'s right to annual leave.',
-      explanation: 'Every worker who has worked for 12 consecutive months is entitled to a minimum of 12 days of annual leave. While the absence of this clause doesn\'t waive the right, it should be explicitly stated.',
-      legalRefs: ['Article 79 of Law No. 13/2003'],
-      recommendation: 'Add an explicit clause for annual leave of at least 12 working days after 12 months of service.',
-      emailTemplate: 'Dear HR,\n\nI kindly request the addition of a clause regarding annual leave rights of at least 12 working days in accordance with Article 79 of Law No. 13 of 2003.\n\nThank you.',
-    },
-    {
-      id: 4,
-      severity: 'MEDIUM',
-      title: 'Overly Broad Non-Compete Clause',
-      excerpt: '"The Second Party is prohibited from working in the same industry for 5 years after termination..."',
-      explanation: 'A 5-year non-compete clause is considered excessively long and potentially restricts the worker\'s constitutional right to make a living. A reasonable limit is usually 6–12 months.',
-      legalRefs: ['Article 1338 of the Civil Code (KUHPerdata)', 'Article 27 paragraph (2) of the 1945 Constitution'],
-      recommendation: 'Negotiate the duration to a maximum of 12 months with a more specific geographic and industry scope. Request financial compensation during the non-compete period.',
-      emailTemplate: 'Dear HR,\n\nI request the non-compete clause be revised to a maximum of 12 months, with proportional financial compensation.\n\nThank you.',
-    },
-    {
-      id: 5,
-      severity: 'LOW',
-      title: 'Vague Dispute Resolution Venue',
-      excerpt: '"All disputes shall be resolved amicably..."',
-      explanation: 'The dispute resolution clause is too general. It is best to specify the mechanism and forum for resolution.',
-      legalRefs: ['Law No. 2/2004 on PPHI'],
-      recommendation: 'Add a tiered mechanism: bipartite negotiation, mediation, and Industrial Relations Court (PHI) in accordance with the PPHI Law.',
-      emailTemplate: 'Dear HR,\n\nI suggest clarifying the dispute resolution clause with bipartite, mediation, and PHI mechanisms as per Law No. 2 of 2004.\n\nThank you.',
-    },
-  ],
-  safeClauses: [
-    {
-      id: 1,
-      title: 'Clear Wage Terms',
-      description: 'The contract explicitly mentions the wage amount, which is above the Jakarta Minimum Wage. This is in accordance with Article 88 of the Labor Law.',
-    },
-    {
-      id: 2,
-      title: 'Social Security (BPJS)',
-      description: 'The contract includes the employer\'s obligation to register the worker in BPJS Health and BPJS Employment in accordance with regulations.',
-    },
-    {
-      id: 3,
-      title: 'Detailed Job Description',
-      description: 'The contract contains a clear and detailed job description, reducing the risk of exploitation outside the agreed scope of work.',
-    },
-  ],
-  summary: {
-    contractType: 'PKWT (Fixed-Term Contract)',
-    duration: '12 Months',
-    salary: 'Rp 5,500,000/month',
-    mustChange: [
-      'Remove probationary clause (illegal for PKWT)',
-      'Adjust working hours to 40 hours/week',
-      'Add overtime provisions in accordance with the law',
-    ],
-    shouldChange: [
-      'Add explicit annual leave clause',
-      'Revise non-compete clause to 12 months',
-      'Clarify dispute resolution mechanism',
-    ],
-    finalRecommendation: 'This contract requires renegotiation of several critical clauses before being signed. The probationary clause in a PKWT is illegal and must be removed. Excessive working hours also violate the law. We advise bringing these points to HRD, referring to the cited legal articles. If the company refuses, consider consulting with LBH or a trade union.',
-  },
-  nextSteps: [
-    { text: 'Send a negotiation email to HR using the template provided, prioritizing CRITICAL clauses first.' },
-    { text: 'Do not sign the contract before the probationary clause is removed — this is a clear legal violation.' },
-    { text: 'Keep copies of your communication as evidence if needed in the future.' },
-    { text: 'If negotiation fails, contact LBH or Disnaker for free legal consultation.' },
-  ],
-};
-
 /* ──────────────── Component ──────────────── */
 
 /* ──────────────── History type ──────────────── */
@@ -367,7 +167,7 @@ async function readFileAsText(file: File): Promise<string> {
       const page = await pdf.getPage(i);
       const content = await page.getTextContent();
       const text = content.items
-        .map((item: any) => ('str' in item ? item.str : ''))
+        .map((item) => ('str' in item ? item.str : ''))
         .join(' ');
       pages.push(text);
     }
@@ -381,8 +181,7 @@ async function readFileAsText(file: File): Promise<string> {
 /* ──────────────── Component ──────────────── */
 
 export default function AnalisisPage() {
-  const { t, locale, toggleLocale } = useI18n();
-  const { theme, toggleTheme } = useTheme();
+  const { t, locale } = useI18n();
 
   const loadingSteps = locale === 'id' ? LOADING_STEPS_ID : LOADING_STEPS_EN;
   const placeholderText = locale === 'id' ? PLACEHOLDER_TEXT_ID : PLACEHOLDER_TEXT_EN;
@@ -414,8 +213,10 @@ export default function AnalisisPage() {
   /* refs */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /* Load history on mount */
+  /* Load history on mount — localStorage hanya tersedia di client,
+     jadi hidrasi lewat effect memang diperlukan di sini */
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHistory(loadHistory());
   }, []);
 
@@ -431,7 +232,7 @@ export default function AnalisisPage() {
   const canSubmit =
     analysisState !== 'loading' &&
     ((inputTab === 'paste' && contractText.trim().length > 0) ||
-      (inputTab === 'upload' && (fileText !== null || file !== null)));
+      (inputTab === 'upload' && fileText !== null && fileText.trim().length > 0));
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
@@ -451,8 +252,8 @@ export default function AnalisisPage() {
       try {
         const text = await readFileAsText(droppedFile);
         setFileText(text);
-      } catch (err: any) {
-        setFileError(err.message || 'Gagal membaca file');
+      } catch (err) {
+        setFileError(err instanceof Error ? err.message : 'Gagal membaca file');
         setFileText(null);
       }
     }
@@ -466,8 +267,8 @@ export default function AnalisisPage() {
       try {
         const text = await readFileAsText(selected);
         setFileText(text);
-      } catch (err: any) {
-        setFileError(err.message || 'Gagal membaca file');
+      } catch (err) {
+        setFileError(err instanceof Error ? err.message : 'Gagal membaca file');
         setFileText(null);
       }
     }
@@ -481,13 +282,14 @@ export default function AnalisisPage() {
     setExpandedFlags(new Set());
     setActiveResultTab('flags');
 
-    /* step-by-step progress */
-    for (let i = 0; i < loadingSteps.length; i++) {
-      await new Promise<void>((resolve) => setTimeout(resolve, 800 + Math.random() * 400));
-      setCurrentStep(i + 1);
-    }
+    /* animasi langkah berjalan PARALEL dengan panggilan API —
+       maju bertahap tapi menahan langkah terakhir sampai API selesai */
+    let stepIdx = 0;
+    const stepTimer = setInterval(() => {
+      stepIdx = Math.min(stepIdx + 1, loadingSteps.length - 1);
+      setCurrentStep(stepIdx);
+    }, 900);
 
-    /* API call (falling back to mock) */
     try {
       const textToAnalyze = inputTab === 'paste' ? contractText : (fileText || '');
       if (!textToAnalyze.trim()) throw new Error('No text');
@@ -499,16 +301,18 @@ export default function AnalisisPage() {
       });
 
       if (!res.ok) throw new Error('API error');
-      const apiData = await res.json();
-      
+      const apiData: ApiAnalysisResult = await res.json();
+      clearInterval(stepTimer);
+      setCurrentStep(loadingSteps.length);
+
       // Adapt API result to Local UI state format
       const severityCounts = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
-      apiData.red_flags?.forEach((f: any) => {
-        if (severityCounts[f.severity as Severity] !== undefined) {
-          severityCounts[f.severity as Severity]++;
+      apiData.red_flags?.forEach((f) => {
+        if (severityCounts[f.severity] !== undefined) {
+          severityCounts[f.severity]++;
         }
       });
-      
+
       const riskLevel = apiData.risk_level || 'LOW';
       const riskLabel = riskLevel === 'CRITICAL' ? t.analysis_risk_critical : riskLevel === 'HIGH' ? t.analysis_risk_high : riskLevel === 'MEDIUM' ? t.analysis_risk_medium : t.analysis_risk_low;
       
@@ -520,17 +324,17 @@ export default function AnalisisPage() {
           : 'Below are the results of your contract analysis based on legislation.',
         totalFlags: apiData.red_flags?.length || 0,
         severityCounts,
-        redFlags: (apiData.red_flags || []).map((f: any, i: number) => ({
+        redFlags: (apiData.red_flags || []).map((f, i) => ({
           id: i + 1,
           severity: f.severity,
           title: f.potensi_masalah ? (f.potensi_masalah.substring(0, 50) + '...') : (locale === 'id' ? 'Klausul Bermasalah' : 'Problematic Clause'),
           excerpt: f.pasal_kontrak || '',
           explanation: f.potensi_masalah || '',
-          legalRefs: f.referensi_uu?.map((r: any) => `${r.pasal} ${r.peraturan}`) || [],
+          legalRefs: f.referensi_uu?.map((r) => `${r.pasal} ${r.peraturan}`) || [],
           recommendation: f.rekomendasi_negosiasi || '',
           emailTemplate: f.email_template ? (typeof f.email_template === 'string' ? f.email_template : `Subject: ${f.email_template.subject}\n\n${f.email_template.body}`) : ''
         })),
-        safeClauses: (apiData.klausul_aman || []).map((c: any, i: number) => ({
+        safeClauses: (apiData.klausul_aman || []).map((c, i) => ({
           id: i + 1,
           title: c.terjemahan ? (c.terjemahan.substring(0, 40) + '...') : (locale === 'id' ? 'Klausul Aman' : 'Safe Clause'),
           description: c.pasal_kontrak || ''
@@ -545,9 +349,12 @@ export default function AnalisisPage() {
             ? 'Silakan pelajari langkah berikutnya untuk negosiasi.'
             : 'Please study the next steps for negotiation.'
         },
-        nextSteps: (apiData.langkah_berikutnya || []).map((step: string) => ({ text: step }))
+        nextSteps: (apiData.langkah_berikutnya || []).map((step: string) => ({ text: step })),
+        disclaimer: apiData.disclaimer || (locale === 'id'
+          ? 'Analisis ini dihasilkan oleh AI dan bukan nasihat hukum yang mengikat. Untuk kasus serius, konsultasikan dengan LBH atau advokat profesional.'
+          : 'This analysis is AI-generated and does not constitute binding legal advice. For serious cases, consult LBH or a professional lawyer.'),
       };
-      
+
       setAnalysisResult(adaptedData);
       setAnalysisState('done');
 
@@ -564,9 +371,9 @@ export default function AnalisisPage() {
       setHistory(updated);
       saveHistory(updated);
     } catch {
-      /* fallback to mock for demo */
-      setAnalysisResult(locale === 'id' ? MOCK_RESULT : MOCK_RESULT_EN);
-      setAnalysisState('done');
+      /* tampilkan error yang jujur — jangan pernah menampilkan hasil palsu */
+      clearInterval(stepTimer);
+      setAnalysisState('error');
     }
   }, [inputTab, contractText, fileText, region, t, locale, loadingSteps, history]);
 
@@ -762,12 +569,30 @@ export default function AnalisisPage() {
                     onClick={(e) => {
                       e.stopPropagation();
                       setFile(null);
+                      setFileText(null);
+                      setFileError(null);
                     }}
                     aria-label={locale === 'id' ? 'Hapus file' : 'Remove file'}
                     type="button"
                   >
                     ✕
                   </button>
+                </div>
+              )}
+
+              {fileError && (
+                <div
+                  role="alert"
+                  style={{
+                    marginTop: 8,
+                    padding: '10px 12px',
+                    borderRadius: 6,
+                    background: 'rgba(239,68,68,0.1)',
+                    color: 'var(--color-risk-critical, #EF4444)',
+                    fontSize: 13,
+                  }}
+                >
+                  ⚠️ {fileError}
                 </div>
               )}
             </>
@@ -805,6 +630,97 @@ export default function AnalisisPage() {
           <div className={s.privacyTip}>
             {t.analysis_privacy}
           </div>
+
+          {/* ── Riwayat analisis (tersimpan lokal di browser) ── */}
+          {history.length > 0 && (
+            <div style={{ marginTop: 24 }}>
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginBottom: 8,
+                }}
+              >
+                <span style={{ fontWeight: 600, fontSize: 14 }}>
+                  {locale === 'id' ? '🕘 Riwayat Analisis' : '🕘 Analysis History'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleClearHistory}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    fontSize: 12,
+                    color: 'var(--color-neutral-light, #6B7280)',
+                    textDecoration: 'underline',
+                  }}
+                >
+                  {locale === 'id' ? 'Hapus semua' : 'Clear all'}
+                </button>
+              </div>
+              {history.slice(0, 5).map((entry) => (
+                <div
+                  key={entry.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '8px 10px',
+                    marginBottom: 6,
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border, #E5E7EB)',
+                    fontSize: 13,
+                  }}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleViewHistory(entry)}
+                    style={{
+                      flex: 1,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'flex-start',
+                      gap: 2,
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      textAlign: 'left',
+                      color: 'inherit',
+                      padding: 0,
+                    }}
+                    aria-label={
+                      locale === 'id'
+                        ? `Lihat hasil analisis ${entry.date}`
+                        : `View analysis result ${entry.date}`
+                    }
+                  >
+                    <span style={{ fontWeight: 500 }}>
+                      {entry.riskLabel} · {entry.totalFlags}{' '}
+                      {locale === 'id' ? 'temuan' : 'findings'}
+                    </span>
+                    <span style={{ fontSize: 11, color: 'var(--color-neutral-light, #6B7280)' }}>
+                      {entry.date}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteHistory(entry.id)}
+                    aria-label={locale === 'id' ? 'Hapus riwayat ini' : 'Delete this entry'}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'var(--color-neutral-light, #6B7280)',
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* ════════ RESULTS PANEL ════════ */}
@@ -1113,6 +1029,23 @@ export default function AnalisisPage() {
                   </div>
                 </div>
               )}
+
+              {/* ── Disclaimer (selalu tampil di setiap hasil) ── */}
+              <div
+                style={{
+                  marginTop: 24,
+                  padding: '14px 16px',
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border, #E5E7EB)',
+                  background: 'var(--color-surface-alt, rgba(107,114,128,0.08))',
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: 'var(--color-neutral-light, #6B7280)',
+                }}
+                role="note"
+              >
+                ⚠️ {analysisResult.disclaimer}
+              </div>
             </div>
           )}
         </section>
