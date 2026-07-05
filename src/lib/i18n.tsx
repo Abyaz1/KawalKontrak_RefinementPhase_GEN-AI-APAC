@@ -429,10 +429,12 @@ const I18nContext = createContext<I18nContextType>({
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>('id');
 
-  // Load from localStorage on mount
+  // Load from localStorage on mount — localStorage hanya ada di client,
+  // sehingga sinkronisasi state awal memang harus lewat effect (SSR-safe)
   useEffect(() => {
     const saved = localStorage.getItem('kk-locale') as Locale | null;
     if (saved && (saved === 'id' || saved === 'en')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocaleState(saved);
     }
   }, []);

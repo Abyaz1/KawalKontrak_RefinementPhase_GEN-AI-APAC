@@ -108,6 +108,22 @@ export interface AnalysisResult {
   risk_level: RiskLevel;
   /** Ordered list of recommended next steps */
   langkah_berikutnya: string[];
+  /** Legal disclaimer — always shown with results */
+  disclaimer: string;
+  /** Engine metadata (which pipeline produced this result) */
+  metadata: AnalysisMetadata;
+}
+
+/** Metadata about how the analysis was produced */
+export interface AnalysisMetadata {
+  /** Which engine produced the result */
+  engine: 'gemini-rag' | 'local-pattern-matching';
+  /** Whether RAG retrieval was used */
+  rag_enabled: boolean;
+  /** LLM model name, null for local engine */
+  model: string | null;
+  /** Regulations retrieved by RAG (e.g. 'UU No. 6 Tahun 2023 Pasal 156') */
+  retrieved_regulations?: string[];
 }
 
 // ── Red Flag Pattern (Detection Engine) ──────────────────────
