@@ -1,19 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
+import { useAuth } from '@/context/AuthContext';
 import s from './Header.module.css';
 
 export function Header() {
   const { locale, t, toggleLocale } = useI18n();
   const { theme, toggleTheme } = useTheme();
+  const { user, loading, loginWithGoogle, logout } = useAuth();
   const pathname = usePathname();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -21,6 +25,17 @@ export function Header() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const closeMobile = () => setMobileMenuOpen(false);
@@ -93,6 +108,54 @@ export function Header() {
             </button>
           </div>
 
+          {/* Desktop Auth */}
+          <div className={s.authWrapper}>
+            {loading ? (
+              <div className={s.avatarPlaceholder} />
+            ) : user ? (
+              <div className={s.avatarContainer} ref={dropdownRef}>
+                <button
+                  className={s.avatarBtn}
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  aria-label="User profile"
+                  type="button"
+                >
+                  {user.photoURL ? (
+                    <img src={user.photoURL} alt={user.displayName || 'User'} className={s.avatarImg} />
+                  ) : (
+                    <span className={s.avatarText}>{(user.displayName || user.email || '?')[0].toUpperCase()}</span>
+                  )}
+                </button>
+                {dropdownOpen && (
+                  <div className={s.dropdownMenu}>
+                    <div className={s.dropdownUser}>
+                      <div className={s.dropdownName}>{user.displayName || 'Pekerja KawalKontrak'}</div>
+                      <div className={s.dropdownEmail}>{user.email}</div>
+                    </div>
+                    <hr className={s.dropdownDivider} />
+                    <Link href="/analisis" className={s.dropdownItem} onClick={() => setDropdownOpen(false)}>
+                      {locale === 'id' ? 'Riwayat Analisis' : 'Analysis History'}
+                    </Link>
+                    <button
+                      className={s.dropdownItem}
+                      onClick={() => {
+                        logout();
+                        setDropdownOpen(false);
+                      }}
+                      type="button"
+                    >
+                      {locale === 'id' ? 'Keluar' : 'Sign Out'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button className={s.loginBtn} onClick={loginWithGoogle} type="button">
+                {locale === 'id' ? 'Masuk' : 'Sign In'}
+              </button>
+            )}
+          </div>
+
           <button
             className={`${s.hamburger} ${mobileMenuOpen ? s.hamburgerOpen : ''}`}
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -134,6 +197,50 @@ export function Header() {
           <button onClick={toggleLocale} className={s.mobileControlBtn}>
             🌐 {locale === 'id' ? 'English' : 'Indonesia'}
           </button>
+        </div>
+
+        {/* Mobile Auth */}
+        <div className={s.mobileAuth}>
+          {loading ? (
+            <div className={s.avatarPlaceholder} style={{ margin: '0 auto' }} />
+          ) : user ? (
+            <div className={s.mobileUser}>
+              <div className={s.mobileUserDetails}>
+                {user.photoURL ? (
+                  <img src={user.photoURL} alt={user.displayName || ''} className={s.mobileAvatar} />
+                ) : (
+                  <div className={s.mobileAvatar} style={{ background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
+                    {(user.displayName || user.email || '?')[0].toUpperCase()}
+                  </div>
+                )}
+                <div>
+                  <div className={s.mobileUserName}>{user.displayName || 'Pekerja KawalKontrak'}</div>
+                  <div className={s.mobileUserEmail}>{user.email}</div>
+                </div>
+              </div>
+              <button
+                className={s.mobileLogoutBtn}
+                onClick={() => {
+                  logout();
+                  closeMobile();
+                }}
+                type="button"
+              >
+                {locale === 'id' ? 'Keluar' : 'Sign Out'}
+              </button>
+            </div>
+          ) : (
+            <button
+              className={s.mobileLoginBtn}
+              onClick={() => {
+                loginWithGoogle();
+                closeMobile();
+              }}
+              type="button"
+            >
+              {locale === 'id' ? 'Masuk dengan Google' : 'Sign In with Google'}
+            </button>
+          )}
         </div>
       </div>
     </header>

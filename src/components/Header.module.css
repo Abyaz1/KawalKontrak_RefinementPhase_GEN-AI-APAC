@@ -360,3 +360,29 @@
     display: none;
   }
 }
+  
+/* Auth and Profile Styles */  
+.authWrapper { display: flex; align-items: center; }  
+.loginBtn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 14px; border-radius: var(--radius-md); font-weight: 500; font-size: var(--text-sm); cursor: pointer; transition: all var(--transition-fast); }  
+.loginBtn:hover { background: rgba(255,255,255,0.1); border-color: #fff; }  
+.avatarPlaceholder { width: 36px; height: 36px; border-radius: 50%%; background: rgba(255,255,255,0.1); animate: pulse 1.5s infinite; }  
+.avatarContainer { position: relative; }  
+.avatarBtn { width: 36px; height: 36px; border-radius: 50%%; border: 2px solid rgba(255,255,255,0.2); background: #3b82f6; overflow: hidden; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; transition: border-color var(--transition-fast); }  
+.avatarBtn:hover { border-color: #60a5fa; }  
+.avatarImg { width: 100%%; height: 100%%; object-fit: cover; }  
+.avatarText { color: #fff; font-weight: bold; font-size: 14px; }  
+.dropdownMenu { position: absolute; right: 0; top: calc(100%% + 12px); background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-md); width: 220px; box-shadow: var(--shadow-lg); overflow: hidden; z-index: var(--z-dropdown); display: flex; flex-direction: column; padding: 6px 0; }  
+.dropdownUser { padding: 10px 16px; display: flex; flex-direction: column; gap: 2px; }  
+.dropdownName { font-weight: 600; font-size: var(--text-sm); color: #fff; }  
+.dropdownEmail { font-size: var(--text-xs); color: #94a3b8; word-break: break-all; }  
+.dropdownDivider { border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 6px 0; }  
+.dropdownItem { padding: 8px 16px; font-size: var(--text-sm); color: #cbd5e1; text-align: left; text-decoration: none; border: none; background: transparent; cursor: pointer; transition: all var(--transition-fast); display: block; width: 100%%; }  
+.dropdownItem:hover { background: rgba(255,255,255,0.05); color: #fff; }  
+.mobileAuth { border-top: 1px solid rgba(255,255,255,0.1); padding-top: var(--space-lg); margin-top: var(--space-lg); display: flex; flex-direction: column; width: 100%%; }  
+.mobileUser { display: flex; flex-direction: column; gap: var(--space-md); }  
+.mobileUserDetails { display: flex; align-items: center; gap: var(--space-md); }  
+.mobileAvatar { width: 42px; height: 42px; border-radius: 50%%; border: 2px solid rgba(255,255,255,0.2); }  
+.mobileUserName { font-weight: 600; color: #fff; }  
+.mobileUserEmail { font-size: var(--text-xs); color: #94a3b8; }  
+.mobileLogoutBtn { background: transparent; border: 1px solid rgba(239,68,68,0.4); color: #ef4444; width: 100%%; padding: 10px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--text-sm); cursor: pointer; }  
+.mobileLoginBtn { background: #3b82f6; border: none; color: #fff; width: 100%%; padding: 12px; border-radius: var(--radius-md); font-weight: 600; font-size: var(--text-sm); cursor: pointer; text-align: center; } 

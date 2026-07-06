@@ -1276,3 +1276,11 @@
     background: #fff !important;
   }
 }
+  
+/* PDF Export Styles */  
+.pdfHiddenContainer { position: absolute; left: -9999px; top: 0; width: 800px; padding: 40px; background: white; color: black; font-family: sans-serif; }  
+.pdfTitle { font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; color: #111827; }  
+.pdfSectionTitle { font-size: 18px; font-weight: bold; margin-top: 24px; margin-bottom: 12px; color: #374151; border-bottom: 1px solid #e5e7eb; padding-bottom: 8px; }  
+.pdfCard { border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px; }  
+.pdfCardTitle { font-weight: 600; margin-bottom: 8px; color: #111827; }  
+.pdfText { font-size: 14px; line-height: 1.5; color: #4b5563; margin-bottom: 8px; } 

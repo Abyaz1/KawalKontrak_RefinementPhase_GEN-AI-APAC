@@ -314,6 +314,7 @@ export async function analyzeWithGemini(
   contractText: string,
   apiKey: string,
   region?: string,
+  locale: string = 'id',
 ): Promise<AnalysisResult> {
   try {
     // Step 1: Deteksi lokal (cepat) — hasilnya menjadi "hint" untuk AI
@@ -344,7 +345,7 @@ export async function analyzeWithGemini(
       }
     }
 
-    const prompt = `=== REFERENSI REGULASI TERKAIT (hasil retrieval RAG — gunakan HANYA ini untuk sitasi) ===
+    let prompt = `=== REFERENSI REGULASI TERKAIT (hasil retrieval RAG — gunakan HANYA ini untuk sitasi) ===
 
 ${ragContext}
 ${regionalContext}
@@ -356,6 +357,10 @@ ${localHints}
 ${contractText.slice(0, 30000)}
 
 Analisis kontrak di atas menggunakan referensi regulasi yang telah disediakan. Verifikasi setiap hasil deteksi pola otomatis: jika benar merupakan pelanggaran, sertakan dengan kutipan klausul aslinya; jika false positive, abaikan. Temukan juga pelanggaran lain yang tidak terdeteksi pola otomatis. Output HANYA JSON valid sesuai struktur di system prompt.`;
+
+    if (locale === 'en') {
+      prompt += `\n\nIMPORTANT: You MUST write your ENTIRE JSON response in English. Keep the JSON keys in English as specified in the interface. Translate all legal explanations, issues, safe clauses, and recommendations into clear, accessible English.`;
+    }
 
     // Step 4: Panggil Gemini
     const parsed = await callGemini(prompt, apiKey);

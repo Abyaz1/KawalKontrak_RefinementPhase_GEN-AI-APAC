@@ -4,23 +4,25 @@
 
 ## 🚀 Features
 
-- **RAG-Enhanced AI Analysis**: Contract analysis is grounded in a curated knowledge base of critical labor-law articles (UU 6/2023, PP 35/2021, PP 36/2021). Relevant articles are retrieved via hybrid search (Gemini semantic embeddings + keyword scoring) and injected into the Gemini prompt, so every citation traces back to real regulation text.
-- **Red Flag Detection (20+ patterns)**: A fast local pattern engine detects harmful clauses (unpaid overtime, PKWT without compensation, unilateral termination, excessive fines, etc.). Its findings are verified and enriched by the AI.
-- **UMK Validation**: Detects the salary in the contract and checks it deterministically against the regional minimum wage (UMK) database.
-- **Risk Assessment**: Categorizes overall contract risk (CRITICAL, HIGH, MEDIUM, LOW).
-- **Legal References**: Direct citations to the relevant UU/PP articles for each finding.
-- **Negotiation Recommendations**: Actionable advice plus ready-to-copy email templates for negotiating with HR.
-- **Analysis History**: Recent analyses are stored locally in the browser (localStorage) — nothing is sent to a server for storage.
-- **Privacy First**: Contracts are analyzed on the fly and never stored permanently.
-- **Graceful Degradation**: Without a Gemini API key the app still works using the local pattern engine.
+- **RAG-Enhanced AI Analysis**: Contract analysis is grounded in a curated database of Indonesian labor-law articles (UU 6/2023, PP 35/2021, PP 36/2021). Relevant regulations are retrieved via hybrid search (Gemini semantic embeddings + keyword scoring) and injected into the prompt.
+- **Red Flag Detection (20+ patterns)**: A fast local pattern engine detects harmful clauses (unpaid overtime, PKWT without compensation, unilateral termination, excessive fines, etc.), which are then validated and expanded by the AI.
+- **UMK Validation**: Dynamically detects contract salaries and cross-checks them against regional minimum wage database entries.
+- **Risk Assessment**: Instantly flags contracts with overall hazard ratings (CRITICAL, HIGH, MEDIUM, LOW).
+- **i18n Bilingual Interface**: Fully supports both Bahasa Indonesia and English interfaces and translations.
+- **Export to PDF**: Users can download a clean, print-optimized multi-page PDF document of their analysis results locally (powered by `html2pdf.js`).
+- **Firebase Authentication & Cloud Storage**:
+  - Optional Google Sign-In to backup analysis history.
+  - Automatic synchronization of previous offline history (`localStorage`) to **Cloud Firestore** upon first login.
+  - Secure cloud storage across devices, while maintaining a privacy-first option for non-logged-in users.
 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript, CSS Modules
 - **AI**: Google Gemini API — `gemini-2.5-flash` (analysis) + `gemini-embedding-001` (RAG semantic retrieval)
+- **Database & Auth**: Firebase Authentication & Cloud Firestore
 - **RAG**: In-process knowledge base (`src/lib/legal-knowledge-base.ts`) + hybrid retrieval (`src/lib/rag-retrieval.ts`)
-- **PDF Parsing**: PDF.js for client-side text extraction
-- **Design**: Responsive layout, Dark/Light mode, i18n (Bahasa Indonesia / English)
+- **PDF Extraction & Export**: PDF.js for client-side text extraction + html2pdf.js for client-side PDF document generation
+- **Design**: Responsive layout, Dark/Light mode, i18n translation system (Bahasa Indonesia / English)
 
 ## 🧠 How the RAG Pipeline Works
 
@@ -50,7 +52,9 @@ If the Gemini call fails, the pipeline falls back to the local engine — the UI
    ```bash
    cp .env.example .env.local
    ```
-   Fill in `GEMINI_API_KEY` (get one free at https://aistudio.google.com/apikey). The app runs without it, using local pattern matching only.
+   Fill in the variables in `.env.local`:
+   - `GEMINI_API_KEY`: get one free at https://aistudio.google.com/apikey.
+   - `NEXT_PUBLIC_FIREBASE_*`: Firebase Web Config values (from Firebase Console project settings) to enable authentication and database features.
 
 3. **Run the development server**
    ```bash

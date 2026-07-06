@@ -10,7 +10,7 @@ const MIN_CONTRACT_LENGTH = 50;
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { contractText, useAI = true, region = '' } = body;
+    const { contractText, useAI = true, region = '', locale = 'id' } = body;
 
     if (!contractText || typeof contractText !== 'string' || contractText.trim() === '') {
       return NextResponse.json(
@@ -42,7 +42,7 @@ export async function POST(req: Request) {
 
     let result;
     if (useAI && apiKey) {
-      result = await analyzeWithGemini(contractText, apiKey, region);
+      result = await analyzeWithGemini(contractText, apiKey, region, locale);
     } else {
       result = await analyzeContractLocal(contractText);
     }

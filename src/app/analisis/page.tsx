@@ -5,6 +5,8 @@ import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useI18n } from '@/lib/i18n';
 import type { AnalysisResult as ApiAnalysisResult } from '@/types';
+import { useAuth } from '@/context/AuthContext';
+import { saveContractAnalysis, getUserAnalyses, deleteUserAnalysis } from '@/lib/firebase-db';
 import s from './page.module.css';
 
 /* ──────────────── Types ──────────────── */
@@ -182,6 +184,7 @@ async function readFileAsText(file: File): Promise<string> {
 
 export default function AnalisisPage() {
   const { t, locale } = useI18n();
+  const { user } = useAuth();
 
   const loadingSteps = locale === 'id' ? LOADING_STEPS_ID : LOADING_STEPS_EN;
   const placeholderText = locale === 'id' ? PLACEHOLDER_TEXT_ID : PLACEHOLDER_TEXT_EN;
@@ -192,6 +195,7 @@ export default function AnalisisPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fileText, setFileText] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
   const [region, setRegion] = useState('Jakarta');
   const [dragActive, setDragActive] = useState(false);
 
@@ -213,13 +217,6 @@ export default function AnalisisPage() {
   /* refs */
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /* Load history on mount — localStorage hanya tersedia di client,
-     jadi hidrasi lewat effect memang diperlukan di sini */
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setHistory(loadHistory());
-  }, []);
-
   /* ──── helpers ──── */
 
   const showToast = useCallback((msg: string) => {
@@ -228,6 +225,35 @@ export default function AnalisisPage() {
     setToastVisible(true);
     toastTimer.current = setTimeout(() => setToastVisible(false), 2600);
   }, []);
+
+  /* Load/Sync history based on auth state */
+  useEffect(() => {
+    async function syncAndFetchHistory() {
+      if (user) {
+        try {
+          // 1. Sync local history to Firestore if it exists
+          const localEntries = loadHistory();
+          if (localEntries.length > 0) {
+            for (const entry of localEntries) {
+              await saveContractAnalysis(user.uid, entry);
+            }
+            localStorage.removeItem(HISTORY_KEY);
+            showToast(locale === 'id' ? '🔄 Riwayat disinkronkan ke akun Anda!' : '🔄 History synced to your account!');
+          }
+          
+          // 2. Fetch history from Firestore
+          const dbHistory = await getUserAnalyses(user.uid);
+          setHistory(dbHistory);
+        } catch (error) {
+          console.error("Gagal memuat riwayat dari Firestore:", error);
+          setHistory(loadHistory());
+        }
+      } else {
+        setHistory(loadHistory());
+      }
+    }
+    syncAndFetchHistory();
+  }, [user, locale, showToast]);
 
   const canSubmit =
     analysisState !== 'loading' &&
@@ -369,13 +395,20 @@ export default function AnalisisPage() {
       };
       const updated = [entry, ...history];
       setHistory(updated);
-      saveHistory(updated);
+      
+      if (user) {
+        saveContractAnalysis(user.uid, entry).catch(err => {
+          console.error("Gagal menyimpan ke Firestore:", err);
+        });
+      } else {
+        saveHistory(updated);
+      }
     } catch {
       /* tampilkan error yang jujur — jangan pernah menampilkan hasil palsu */
       clearInterval(stepTimer);
       setAnalysisState('error');
     }
-  }, [inputTab, contractText, fileText, region, t, locale, loadingSteps, history]);
+  }, [inputTab, contractText, fileText, region, t, locale, loadingSteps, history, user, showToast]);
 
   /* ──── actions ──── */
 
@@ -384,9 +417,33 @@ export default function AnalisisPage() {
     showToast('✅ Link berhasil disalin!');
   }, [showToast]);
 
-  const handleDownloadPDF = useCallback(() => {
-    window.print();
-  }, []);
+  const handleDownloadPDF = useCallback(async () => {
+    if (typeof window === 'undefined') return;
+    setIsPdfGenerating(true);
+    
+    try {
+      const element = document.getElementById('pdf-export-container');
+      if (!element) return;
+      
+      // @ts-ignore
+      const html2pdf = (await import('html2pdf.js')).default;
+      
+      const opt: any = {
+        margin:       10,
+        filename:     'KawalKontrak-Analysis.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+    } catch (err) {
+      console.error('PDF generation failed', err);
+      alert(locale === 'id' ? 'Gagal mengunduh PDF' : 'Failed to download PDF');
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  }, [locale]);
 
   const handleNewAnalysis = useCallback(() => {
     setContractText('');
@@ -409,18 +466,42 @@ export default function AnalisisPage() {
     setExpandedFlags(new Set());
   }, []);
 
-  const handleDeleteHistory = useCallback((id: string) => {
+  const handleDeleteHistory = useCallback(async (id: string) => {
     const updated = history.filter((h) => h.id !== id);
     setHistory(updated);
-    saveHistory(updated);
-    showToast('🗑️ Riwayat dihapus');
-  }, [history, showToast]);
+    
+    if (user) {
+      try {
+        await deleteUserAnalysis(id);
+        showToast(locale === 'id' ? '🗑️ Riwayat dihapus dari cloud' : '🗑️ History deleted from cloud');
+      } catch (err) {
+        console.error("Gagal menghapus riwayat dari Firestore:", err);
+        showToast(locale === 'id' ? '❌ Gagal menghapus riwayat cloud' : '❌ Failed to delete cloud history');
+      }
+    } else {
+      saveHistory(updated);
+      showToast('🗑️ Riwayat dihapus');
+    }
+  }, [history, user, locale, showToast]);
 
-  const handleClearHistory = useCallback(() => {
+  const handleClearHistory = useCallback(async () => {
+    if (history.length === 0) return;
+    
     setHistory([]);
-    localStorage.removeItem(HISTORY_KEY);
-    showToast('🗑️ Semua riwayat dihapus');
-  }, [showToast]);
+    if (user) {
+      try {
+        const deletePromises = history.map((item) => deleteUserAnalysis(item.id));
+        await Promise.all(deletePromises);
+        showToast(locale === 'id' ? '🗑️ Semua riwayat akun dihapus' : '🗑️ All account history cleared');
+      } catch (err) {
+        console.error("Gagal membersihkan riwayat dari Firestore:", err);
+        showToast(locale === 'id' ? '❌ Gagal membersihkan riwayat cloud' : '❌ Failed to clear cloud history');
+      }
+    } else {
+      localStorage.removeItem(HISTORY_KEY);
+      showToast(locale === 'id' ? '🗑️ Semua riwayat lokal dihapus' : '🗑️ All local history cleared');
+    }
+  }, [history, user, locale, showToast]);
 
 
   const toggleFlag = useCallback((id: number) => {
@@ -813,8 +894,8 @@ export default function AnalisisPage() {
                 <button className={s.actionBtn} onClick={handleShare} type="button">
                   {t.analysis_share}
                 </button>
-                <button className={s.actionBtn} onClick={handleDownloadPDF} type="button">
-                  {t.analysis_download}
+                <button className={s.actionBtn} onClick={handleDownloadPDF} type="button" disabled={isPdfGenerating}>
+                  {isPdfGenerating ? (locale === 'id' ? 'Memproses PDF...' : 'Generating PDF...') : t.analysis_download}
                 </button>
                 <button
                   className={`${s.actionBtn} ${s.actionBtnPrimary}`}
@@ -1046,6 +1127,45 @@ export default function AnalisisPage() {
               >
                 ⚠️ {analysisResult.disclaimer}
               </div>
+              
+              {/* ── Hidden Container for PDF Export ── */}
+              <div id="pdf-export-container" className={s.pdfHiddenContainer}>
+                <h1 className={s.pdfTitle}>KawalKontrak.ai - {t.analysis_title || 'Analysis Report'}</h1>
+                <div style={{ marginBottom: 16 }}>
+                  <p><strong>{t.analysis_contract_type || 'Tipe Kontrak'}:</strong> {analysisResult.summary.contractType}</p>
+                  <p><strong>{t.analysis_salary || 'Gaji'}:</strong> {analysisResult.summary.salary}</p>
+                  <p><strong>{t.analysis_duration || 'Durasi'}:</strong> {analysisResult.summary.duration}</p>
+                  <p><strong>{t.analysis_risk_label || 'Tingkat Risiko'}:</strong> {analysisResult.riskLabel}</p>
+                </div>
+
+                <div className={s.pdfSectionTitle}>{t.analysis_tab_summary || 'Ringkasan Akhir'}</div>
+                <div className={s.pdfText}>
+                  {analysisResult.summary.finalRecommendation}
+                </div>
+
+                <div className={s.pdfSectionTitle}>{t.analysis_tab_flags || 'Klausul Berbahaya (Red Flags)'} ({analysisResult.redFlags.length})</div>
+                {analysisResult.redFlags.map((flag) => (
+                  <div key={flag.id} className={s.pdfCard}>
+                    <div className={s.pdfCardTitle}>[{flag.severity}] {flag.title}</div>
+                    <div className={s.pdfText}><strong>Teks Kontrak:</strong> {flag.excerpt}</div>
+                    <div className={s.pdfText}><strong>Penjelasan:</strong> {flag.explanation}</div>
+                    <div className={s.pdfText}><strong>Saran:</strong> {flag.recommendation}</div>
+                  </div>
+                ))}
+
+                <div className={s.pdfSectionTitle}>{t.analysis_tab_safe || 'Klausul Aman'} ({analysisResult.safeClauses.length})</div>
+                {analysisResult.safeClauses.map((clause) => (
+                  <div key={clause.id} className={s.pdfCard}>
+                    <div className={s.pdfCardTitle}>{clause.title}</div>
+                    <div className={s.pdfText}>{clause.description}</div>
+                  </div>
+                ))}
+
+                <div style={{ marginTop: 24, fontSize: 11, color: '#6B7280', borderTop: '1px solid #E5E7EB', paddingTop: 12 }}>
+                  {analysisResult.disclaimer}
+                </div>
+              </div>
+
             </div>
           )}
         </section>
