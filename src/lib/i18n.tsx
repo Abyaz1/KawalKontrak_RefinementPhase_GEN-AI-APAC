@@ -165,7 +165,7 @@ const id: Dictionary = {
   hero_stat_flags: 'Red Flags Terdeteksi',
   hero_stat_free: 'Gratis',
   hero_stat_data: 'Data Disimpan',
-  hero_trust_badge: 'Privasi Terjaga: Kontrak Tidak Disimpan',
+  hero_trust_badge: 'Privacy Protected',
 
   features_subtitle: 'Fitur Analisis',
   features_title: 'Apa yang Kami Deteksi',
@@ -296,7 +296,7 @@ const en: Dictionary = {
   hero_stat_flags: 'Red Flags Detected',
   hero_stat_free: 'Free',
   hero_stat_data: 'Data Stored',
-  hero_trust_badge: 'Privacy Protected: Contracts Not Stored',
+  hero_trust_badge: 'Privacy Protected',
 
   features_subtitle: 'Analysis Features',
   features_title: 'What We Detect',

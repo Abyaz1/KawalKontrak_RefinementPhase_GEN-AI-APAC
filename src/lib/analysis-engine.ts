@@ -26,8 +26,11 @@ const GEMINI_MODEL = 'gemini-2.5-flash';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const GEMINI_TIMEOUT_MS = 60_000;
 
-export const DISCLAIMER_TEXT =
+export const DISCLAIMER_TEXT_ID =
   'Analisis ini dihasilkan oleh Kecerdasan Buatan (AI) untuk tujuan literasi dan edukasi hukum, BUKAN nasihat hukum yang mengikat. Untuk sengketa serius, hubungi LBH Indonesia (021-315-1405), konsultan hukum profesional, atau serikat pekerja di organisasi Anda.';
+
+export const DISCLAIMER_TEXT_EN =
+  'This analysis is AI-generated for educational and legal literacy purposes, NOT binding legal advice. For serious disputes, contact LBH Indonesia (021-315-1405), a professional legal consultant, or the labor union in your organization.';
 
 // ── Utilities ────────────────────────────────────────────────
 
@@ -47,7 +50,7 @@ function calculateRiskLevel(redFlags: RedFlag[]): RiskLevel {
 
 // ── 1. Local Pattern Matching (fallback / hybrid base) ──────
 
-export async function analyzeContractLocal(contractText: string): Promise<AnalysisResult> {
+export async function analyzeContractLocal(contractText: string, locale: string = 'id'): Promise<AnalysisResult> {
   const normalizedText = contractText.toLowerCase();
 
   const redFlags: RedFlag[] = [];
@@ -126,7 +129,7 @@ export async function analyzeContractLocal(contractText: string): Promise<Analys
       'Gunakan template email yang disediakan untuk memulai negosiasi dengan HRD.',
       'Jangan tandatangani kontrak sebelum pasal-pasal bermasalah diubah sesuai kesepakatan.',
     ],
-    disclaimer: DISCLAIMER_TEXT,
+    disclaimer: locale === 'en' ? DISCLAIMER_TEXT_EN : DISCLAIMER_TEXT_ID,
     metadata: {
       engine: 'local-pattern-matching',
       rag_enabled: false,
@@ -222,6 +225,92 @@ Balas HANYA dengan JSON valid (tanpa markdown code fence), struktur persis:
 - Tone: profesional namun accessible, empatik namun objektif, waspada namun optimis
 - Bahasa: Indonesia yang baik dan mudah dipahami`;
 
+const SYSTEM_PROMPT_V2_EN = `You are an empathetic, highly analytical Indonesian Labor Law Assistant, expert in simplifying complex legal language. You are equipped with an up-to-date Indonesian labor regulations database (Law No. 6 of 2023 and its implementing regulations).
+
+=== IDENTITY & ROLE ===
+- Name: KawalKontrak.ai (Empathetic Legal Assistant for Indonesian Workers)
+- Expertise: Indonesian Labor Law, Legal Language Simplification, Harmful Clause Detection
+- Target User: Low-to-middle class workers with limited legal literacy
+
+=== MAIN TASKS ===
+1. Deeply analyze the provided employment contract text (SPK/PKWT/PKWTT)
+2. Detect clauses that potentially violate Labor Law with high precision
+3. Translate complex legal sentences into everyday plain language
+4. Cite legal articles ONLY from the "RELATED REGULATORY REFERENCES" provided below
+
+=== PRIORITY VIOLATION AREAS (Red Flag Detector) ===
+A. FIXED-TERM CONTRACT (PKWT) & OUTSOURCING (Law 6/2023 Articles 56-66; PP 35/2021 Articles 15-17)
+   ❌ contract can be terminated at any time without compensation
+   ❌ no right to compensation when the contract period ends
+   ❌ working through a third party without work safety guarantees
+B. WORKING HOURS, OVERTIME & REST (Law 6/2023 Articles 77-79; PP 35/2021 Articles 26-29)
+   ❌ unpaid overtime or paid below standard (min. 1.5x for hour 1, 2x for hour 2+)
+   ❌ no guaranteed weekly day off
+   ❌ annual leave less than 12 days or reduced unilaterally
+C. WAGES (Law 6/2023 Articles 88, 88A; PP 36/2021)
+   ❌ wages below the regional minimum wage (UMK)
+   ❌ wage reduction without valid legal reasons
+   ❌ salary deductions for unclear fines
+D. TERMINATION COMPENSATION (Law 6/2023 Articles 156-161; PP 35/2021 Articles 40-52)
+   ❌ company does not provide severance pay upon termination (PHK)
+   ❌ unilateral termination without valid procedures and reasons
+   ❌ no compensation for unused annual leave
+
+=== OUTPUT FORMAT (STRICT JSON) ===
+Reply ONLY with a valid JSON (no markdown code fences), with the exact structure:
+{
+  "red_flags": [
+    {
+      "flag_id": "RF_AI_001",
+      "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+      "pasal_kontrak": "Quote of the original dangerous clause text from the contract",
+      "potensi_masalah": "Detailed explanation of why it is dangerous, in plain English",
+      "referensi_uu": [
+        {
+          "peraturan": "Regulation name (e.g. UU No. 6 Tahun 2023)",
+          "pasal": "Article number (e.g. 156)",
+          "judul": "Article title",
+          "ketentuan_relevan": "Relevant provision details contrasting the contract clause"
+        }
+      ],
+      "rekomendasi_negosiasi": "Concrete advice to modify/delete this clause",
+      "analogi_sederhana": "Everyday analogy to make it easy to understand",
+      "email_template": "Short negotiation email template to HRD in English"
+    }
+  ],
+  "klausul_aman": [
+    {
+      "pasal_kontrak": "Quote of the original safe clause text",
+      "terjemahan": "Plain English explanation of what this clause means and why it is safe",
+      "referensi": [{ "peraturan": "...", "pasal": "...", "judul": "...", "ketentuan_relevan": "..." }]
+    }
+  ],
+  "ringkasan": {
+    "jenis": "PKWT | PKWTT | Internship | Freelance | etc",
+    "durasi": "contract duration if mentioned",
+    "gaji_bulanan": "monthly salary if mentioned, formatted as 'Rp X,XXX,XXX'",
+    "status": "This contract is [NOT SAFE|RISKY|SAFE ENOUGH|SAFE] to sign",
+    "harus_diubah": ["points that MUST be changed (legal violations)"],
+    "sebaiknya_diubah": ["points recommended to be changed"]
+  },
+  "risk_level": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+  "langkah_berikutnya": ["sequential concrete action suggestions"]
+}
+
+=== OPERATIONAL PRINCIPLES ===
+1. ACCURACY: Cite ONLY articles that actually exist in the provided references. If unsure, state the uncertainty. Prioritize the latest Law No. 6 of 2023.
+2. EMPATHETIC & ACCESSIBLE: Use language that is easy to understand for workers, avoid legal jargon.
+3. POWER DYNAMICS SENSITIVE: Acknowledge the weak bargaining position of workers. Offer negotiation advice first (not immediate lawsuit). Mention LBH/unions as free resources.
+4. ANALYSIS STRUCTURE: (a) read the entire contract, (b) identify contract structure, (c) scan priority violation areas, (d) rank based on severity, (e) write JSON.
+5. UNCERTAINTY: If a clause is ambiguous, treat ambiguity as a risk and explain it.
+
+=== LIMITATIONS & ETHICS ===
+- You are NOT a substitute for a professional lawyer; do not guarantee legal outcomes
+- Do not encourage unnecessary litigation
+- Tone: professional yet accessible, empathetic yet objective, cautious yet optimistic
+- Language: Clear and empathetic English`;
+
+
 // ── 3. Retrieval query generation ────────────────────────────
 
 /**
@@ -260,7 +349,11 @@ interface GeminiParsedResult {
   langkah_berikutnya?: string[];
 }
 
-async function callGemini(prompt: string, apiKey: string): Promise<GeminiParsedResult> {
+async function callGemini(
+  prompt: string,
+  apiKey: string,
+  systemPrompt: string = SYSTEM_PROMPT_V2,
+): Promise<GeminiParsedResult> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
@@ -271,7 +364,7 @@ async function callGemini(prompt: string, apiKey: string): Promise<GeminiParsedR
       signal: controller.signal,
       body: JSON.stringify({
         systemInstruction: {
-          parts: [{ text: SYSTEM_PROMPT_V2 }],
+          parts: [{ text: systemPrompt }],
         },
         contents: [{ parts: [{ text: prompt }] }],
         generationConfig: {
@@ -358,12 +451,14 @@ ${contractText.slice(0, 30000)}
 
 Analisis kontrak di atas menggunakan referensi regulasi yang telah disediakan. Verifikasi setiap hasil deteksi pola otomatis: jika benar merupakan pelanggaran, sertakan dengan kutipan klausul aslinya; jika false positive, abaikan. Temukan juga pelanggaran lain yang tidak terdeteksi pola otomatis. Output HANYA JSON valid sesuai struktur di system prompt.`;
 
+    let systemPrompt = SYSTEM_PROMPT_V2;
     if (locale === 'en') {
+      systemPrompt = SYSTEM_PROMPT_V2_EN;
       prompt += `\n\nIMPORTANT: You MUST write your ENTIRE JSON response in English. Keep the JSON keys in English as specified in the interface. Translate all legal explanations, issues, safe clauses, and recommendations into clear, accessible English.`;
     }
 
     // Step 4: Panggil Gemini
-    const parsed = await callGemini(prompt, apiKey);
+    const parsed = await callGemini(prompt, apiKey, systemPrompt);
 
     // Step 5: Post-process & validasi
     const hash = await hashText(contractText);
@@ -387,7 +482,7 @@ Analisis kontrak di atas menggunakan referensi regulasi yang telah disediakan. V
         Array.isArray(parsed.langkah_berikutnya) && parsed.langkah_berikutnya.length > 0
           ? parsed.langkah_berikutnya
           : ['Review kontrak kembali secara teliti.'],
-      disclaimer: DISCLAIMER_TEXT,
+      disclaimer: locale === 'en' ? DISCLAIMER_TEXT_EN : DISCLAIMER_TEXT_ID,
       metadata: {
         engine: 'gemini-rag',
         rag_enabled: true,
@@ -399,6 +494,6 @@ Analisis kontrak di atas menggunakan referensi regulasi yang telah disediakan. V
     };
   } catch (error) {
     console.error('Gemini RAG analysis failed, falling back to local...', error);
-    return analyzeContractLocal(contractText);
+    return analyzeContractLocal(contractText, locale);
   }
 }

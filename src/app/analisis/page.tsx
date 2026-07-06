@@ -323,7 +323,7 @@ export default function AnalisisPage() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contractText: textToAnalyze, useAI: true, region }),
+        body: JSON.stringify({ contractText: textToAnalyze, useAI: true, region, locale }),
       });
 
       if (!res.ok) throw new Error('API error');
@@ -417,33 +417,11 @@ export default function AnalisisPage() {
     showToast('✅ Link berhasil disalin!');
   }, [showToast]);
 
-  const handleDownloadPDF = useCallback(async () => {
-    if (typeof window === 'undefined') return;
-    setIsPdfGenerating(true);
-    
-    try {
-      const element = document.getElementById('pdf-export-container');
-      if (!element) return;
-      
-      // @ts-ignore
-      const html2pdf = (await import('html2pdf.js')).default;
-      
-      const opt: any = {
-        margin:       10,
-        filename:     'KawalKontrak-Analysis.pdf',
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      await html2pdf().set(opt).from(element).save();
-    } catch (err) {
-      console.error('PDF generation failed', err);
-      alert(locale === 'id' ? 'Gagal mengunduh PDF' : 'Failed to download PDF');
-    } finally {
-      setIsPdfGenerating(false);
+  const handleDownloadPDF = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.print();
     }
-  }, [locale]);
+  }, []);
 
   const handleNewAnalysis = useCallback(() => {
     setContractText('');

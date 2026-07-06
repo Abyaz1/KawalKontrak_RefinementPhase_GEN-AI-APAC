@@ -1,8 +1,13 @@
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
+import { useI18n } from '@/lib/i18n';
 import styles from './Footer.module.css';
 
 export function Footer() {
+  const { t, locale } = useI18n();
+
   return (
     <footer className={styles.footer}>
       <div className={styles.footerInner}>
@@ -13,45 +18,45 @@ export function Footer() {
               <span>🛡️</span> KawalKontrak.ai
             </div>
             <p className={styles.footerTagline}>
-              Platform analisis kontrak kerja berbasis AI untuk melindungi hak-hak pekerja Indonesia. Gratis, aman, dan transparan.
+              {t.footer_tagline}
             </p>
           </div>
 
           {/* Platform */}
           <div className={styles.footerColumn}>
-            <h4>Platform</h4>
+            <h4>{t.footer_platform}</h4>
             <ul className={styles.footerLinks}>
               <li>
-                <Link href="/analisis">Analisis Kontrak</Link>
+                <Link href="/analisis">{t.footer_analysis}</Link>
               </li>
               <li>
-                <Link href="/#fitur">Fitur</Link>
+                <Link href="/#fitur">{t.nav_features}</Link>
               </li>
               <li>
-                <Link href="/#cara-kerja">Cara Kerja</Link>
+                <Link href="/#cara-kerja">{t.nav_how_it_works}</Link>
               </li>
               <li>
-                <Link href="/#faq">FAQ</Link>
+                <Link href="/#faq">{t.nav_faq}</Link>
               </li>
             </ul>
           </div>
 
           {/* Sumber Daya */}
           <div className={styles.footerColumn}>
-            <h4>Sumber Daya</h4>
+            <h4>{t.footer_resources}</h4>
             <ul className={styles.footerLinks}>
               <li>
                 <a href="https://jdih.kemnaker.go.id" target="_blank" rel="noopener noreferrer">
-                  UU Ketenagakerjaan
+                  {locale === 'id' ? 'UU Ketenagakerjaan' : 'Labor Regulations'}
                 </a>
               </li>
               <li>
-                <a href="https://www.bantuanhukum.or.id" target="_blank" rel="noopener noreferrer">
-                  LBH Indonesia
+                <a href="https://ylbhi.or.id" target="_blank" rel="noopener noreferrer">
+                  {locale === 'id' ? 'YLBHI (Bantuan Hukum)' : 'Indonesian Legal Aid (YLBHI)'}
                 </a>
               </li>
               <li>
-                <a href="https://kspi.or.id" target="_blank" rel="noopener noreferrer">
+                <a href="https://kspicitu.org" target="_blank" rel="noopener noreferrer">
                   KSPI
                 </a>
               </li>
@@ -60,16 +65,16 @@ export function Footer() {
 
           {/* Legal */}
           <div className={styles.footerColumn}>
-            <h4>Legal</h4>
+            <h4>{t.footer_legal}</h4>
             <ul className={styles.footerLinks}>
               <li>
                 <Link href="/disclaimer">Disclaimer</Link>
               </li>
               <li>
-                <Link href="/privasi">Privasi</Link>
+                <Link href="/privasi">{locale === 'id' ? 'Privasi' : 'Privacy'}</Link>
               </li>
               <li>
-                <Link href="/syarat">Syarat Penggunaan</Link>
+                <Link href="/syarat">{locale === 'id' ? 'Syarat Penggunaan' : 'Terms of Service'}</Link>
               </li>
             </ul>
           </div>
@@ -79,21 +84,8 @@ export function Footer() {
 
         <div className={styles.footerBottom}>
           <p className={styles.footerDisclaimer}>
-            ⚠️ KawalKontrak.ai bukan nasihat hukum. Hasil analisis bersifat edukatif.
-            Konsultasikan dengan profesional hukum untuk kasus yang memerlukan penanganan serius. Data yang diunggah tidak disimpan secara permanen.
+            ⚠️ {t.footer_disclaimer}
           </p>
-
-          <div className={styles.footerSocials}>
-            <a href="#" className={styles.socialLink} aria-label="Twitter" title="Twitter">
-              𝕏
-            </a>
-            <a href="#" className={styles.socialLink} aria-label="GitHub" title="GitHub">
-              GH
-            </a>
-            <a href="#" className={styles.socialLink} aria-label="Instagram" title="Instagram">
-              IG
-            </a>
-          </div>
         </div>
       </div>
     </footer>

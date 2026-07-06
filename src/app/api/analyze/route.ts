@@ -44,7 +44,7 @@ export async function POST(req: Request) {
     if (useAI && apiKey) {
       result = await analyzeWithGemini(contractText, apiKey, region, locale);
     } else {
-      result = await analyzeContractLocal(contractText);
+      result = await analyzeContractLocal(contractText, locale);
     }
 
     // Validasi UMK — cek gaji terhadap upah minimum regional (deterministik,
