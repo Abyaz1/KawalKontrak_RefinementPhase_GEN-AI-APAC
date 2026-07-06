@@ -419,15 +419,15 @@ interface I18nContextType {
 }
 
 const I18nContext = createContext<I18nContextType>({
-  locale: 'id',
-  t: id,
+  locale: 'en',
+  t: en,
   setLocale: () => {},
   toggleLocale: () => {},
 });
 
 // ── Provider ──
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>('id');
+  const [locale, setLocaleState] = useState<Locale>('en');
 
   // Load from localStorage on mount — localStorage hanya ada di client,
   // sehingga sinkronisasi state awal memang harus lewat effect (SSR-safe)
@@ -436,6 +436,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     if (saved && (saved === 'id' || saved === 'en')) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setLocaleState(saved);
+      document.documentElement.lang = saved;
+    } else {
+      document.documentElement.lang = 'en';
     }
   }, []);
 
