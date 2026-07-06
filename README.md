@@ -8,8 +8,9 @@
 - **Red Flag Detection (20+ patterns)**: A fast local pattern engine detects harmful clauses (unpaid overtime, PKWT without compensation, unilateral termination, excessive fines, etc.), which are then validated and expanded by the AI.
 - **UMK Validation**: Dynamically detects contract salaries and cross-checks them against regional minimum wage database entries.
 - **Risk Assessment**: Instantly flags contracts with overall hazard ratings (CRITICAL, HIGH, MEDIUM, LOW).
-- **i18n Bilingual Interface**: Fully supports both Bahasa Indonesia and English interfaces and translations.
-- **Export to PDF**: Users can download a clean, print-optimized multi-page PDF document of their analysis results locally (powered by `html2pdf.js`).
+- **i18n Bilingual Interface**: Fully supports English (Default) and Bahasa Indonesia interfaces.
+- **Export to PDF**: Users can download a clean, print-optimized multi-page PDF document of their analysis results natively via the browser's `window.print()`, ensuring fast and robust exports without heavy dependencies.
+- **Legal Transparency**: Dedicated routes for Terms of Service, Privacy Policy, and Disclaimers.
 - **Firebase Authentication & Cloud Storage**:
   - Optional Google Sign-In to backup analysis history.
   - Automatic synchronization of previous offline history (`localStorage`) to **Cloud Firestore** upon first login.
@@ -18,11 +19,11 @@
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js 16 (App Router), React 19, TypeScript, CSS Modules
-- **AI**: Google Gemini API — `gemini-2.5-flash` (analysis) + `gemini-embedding-001` (RAG semantic retrieval)
+- **AI**: Google Gemini API — `gemini-1.5-flash` (analysis) + `gemini-embedding-001` (RAG semantic retrieval)
 - **Database & Auth**: Firebase Authentication & Cloud Firestore
 - **RAG**: In-process knowledge base (`src/lib/legal-knowledge-base.ts`) + hybrid retrieval (`src/lib/rag-retrieval.ts`)
-- **PDF Extraction & Export**: PDF.js for client-side text extraction + html2pdf.js for client-side PDF document generation
-- **Design**: Responsive layout, Dark/Light mode, i18n translation system (Bahasa Indonesia / English)
+- **PDF Extraction**: PDF.js for client-side text extraction + Native CSS `@media print` for document generation
+- **Design**: Responsive layout, i18n translation system (English / Bahasa Indonesia)
 
 ## 🧠 How the RAG Pipeline Works
 
