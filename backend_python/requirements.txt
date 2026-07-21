@@ -1,0 +1,27 @@
+# =============================================================
+# KawalKontrak.ai — Python AI Backend
+# Requirements
+#
+# Install semua dependency dengan perintah:
+#   pip install -r requirements.txt
+#
+# Versi minimum Python: 3.11
+# =============================================================
+
+# --- Web Framework ---
+fastapi==0.115.0          # Framework API modern, async, berbasis Pydantic
+uvicorn[standard]==0.32.0 # ASGI server untuk menjalankan FastAPI
+
+# --- Google Gemini AI SDK ---
+google-genai==1.19.0      # SDK resmi Google untuk Gemini API (mendukung File Search)
+
+# --- Data Validation ---
+# Catatan: pydantic 2.14.0a1 dibutuhkan untuk Python 3.14 karena pydantic-core
+# versi stabil belum menyediakan binary wheel untuk Python 3.14.
+pydantic>=2.14.0a1        # Validasi dan serialisasi data (Structured Output Gemini)
+
+# --- Environment Management ---
+python-dotenv==1.0.1      # Membaca variabel dari file .env
+
+# --- HTTP Client (untuk debugging/testing) ---
+httpx>=0.28.1             # HTTP client modern, versi kompatibel dengan google-genai

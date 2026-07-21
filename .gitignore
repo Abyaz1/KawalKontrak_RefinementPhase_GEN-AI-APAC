@@ -44,4 +44,15 @@ next-env.d.ts
 .agents/
 AGENT_CONTEXT.md
 
+# docs folder
+/docs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
 !.env.example
