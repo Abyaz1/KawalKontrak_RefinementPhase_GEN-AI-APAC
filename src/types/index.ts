@@ -52,8 +52,8 @@ export interface RedFlag {
   rekomendasi_negosiasi: string;
   /** Simple analogy for non-legal readers */
   analogi_sederhana: string;
-  /** Optional email template for negotiation */
-  email_template?: string | { subject: string; body: string };
+  /** Email template for negotiation (empty string when unavailable) */
+  email_template?: string;
 }
 
 // ── Safe Clause ──────────────────────────────────────────────
@@ -66,6 +66,24 @@ export interface SafeClause {
   terjemahan: string;
   /** Optional legal references confirming compliance */
   referensi?: PasalReference[];
+}
+
+// ── Review Clause (FR-05) ────────────────────────────────────
+
+/**
+ * A clause the pipeline could NOT judge automatically — no definitive
+ * legal reference was found. Shown explicitly to the user
+ * ("tidak ditemukan referensi pasti") instead of being dropped.
+ */
+export interface ReviewClause {
+  /** Excerpt from the contract clause */
+  pasal_kontrak: string;
+  /** Main topic of the clause */
+  topik: string;
+  /** Why this clause needs human review */
+  alasan: string;
+  /** Legal-match status: 'TIDAK_DITEMUKAN' | 'AMBIGU' */
+  status: string;
 }
 
 // ── Contract Summary ─────────────────────────────────────────
@@ -102,6 +120,8 @@ export interface AnalysisResult {
   red_flags: RedFlag[];
   /** All clauses confirmed as safe / compliant */
   klausul_aman: SafeClause[];
+  /** Clauses needing human review — no definitive reference found (FR-05) */
+  klausul_tinjauan?: ReviewClause[];
   /** High-level contract summary */
   ringkasan: ContractSummary;
   /** Overall risk assessment */
@@ -116,15 +136,45 @@ export interface AnalysisResult {
 
 /** Metadata about how the analysis was produced */
 export interface AnalysisMetadata {
-  /** Which engine produced the result */
-  engine: 'gemini-rag' | 'local-pattern-matching';
+  /** Which engine produced the result, e.g. 'gemini-multi-agent-python' | 'local-pattern-matching' */
+  engine: string;
   /** Whether RAG retrieval was used */
   rag_enabled: boolean;
   /** LLM model name, null for local engine */
   model: string | null;
+  /** Corpus access mode: 'file_search' | 'file_data' | 'none' */
+  rag_mode?: string;
+  /** True if this result was served from the backend cache */
+  cached?: boolean;
+  /** Verifier status: 'passed' | 'skipped' | 'failed_open' */
+  verifier_status?: string;
+  /** True if the contract text was truncated before analysis */
+  truncated?: boolean;
+  /** Output language of the analysis */
+  locale?: string;
   /** Regulations retrieved by RAG (e.g. 'UU No. 6 Tahun 2023 Pasal 156') */
   retrieved_regulations?: string[];
 }
+
+// ── Streaming Progress (FR-06) ───────────────────────────────
+
+/** One NDJSON event emitted by the analysis pipeline stream */
+export interface PipelineStageEvent {
+  type: 'stage';
+  /** 'cache' | 'extractor' | 'legal_matcher' | 'risk_grader' | 'verifier' | 'negotiator' */
+  stage: string;
+  status: 'running' | 'done';
+  /** Stage-specific details, e.g. { clauses: 12 } */
+  detail?: Record<string, number | string | boolean>;
+}
+
+/** Final NDJSON event carrying the analysis result */
+export interface PipelineResultEvent {
+  type: 'result';
+  data: AnalysisResult;
+}
+
+export type PipelineEvent = PipelineStageEvent | PipelineResultEvent;
 
 // ── Red Flag Pattern (Detection Engine) ──────────────────────
 

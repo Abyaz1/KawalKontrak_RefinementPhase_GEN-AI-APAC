@@ -19,7 +19,7 @@ export default function TermsPage() {
           </p>
           <p>
             <strong>Service Description</strong><br />
-            KawalKontrak.ai provides an AI-powered tool to analyze employment contracts against Indonesian labor laws. The service is provided "as is" and is intended for informational and educational purposes.
+            KawalKontrak.ai provides an AI-powered tool to analyze employment contracts against Indonesian labor laws. The service is provided &ldquo;as is&rdquo; and is intended for informational and educational purposes.
           </p>
           <p>
             <strong>User Conduct</strong><br />

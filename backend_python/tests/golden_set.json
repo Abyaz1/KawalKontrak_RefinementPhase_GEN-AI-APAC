@@ -1,0 +1,47 @@
+{
+  "description": "Golden set klausul kontrak berlabel untuk uji regresi akurasi pipeline (TRD §10). Setiap perubahan prompt/model harus tetap lulus set ini.",
+  "clauses": [
+    {
+      "id": "G01",
+      "text": "Perjanjian berakhir demi hukum dan Pihak Kedua tidak berhak atas kompensasi maupun pesangon dalam bentuk apapun.",
+      "expected": "red_flag",
+      "topic_hint": "kompensasi PKWT",
+      "match_keywords": ["kompensasi", "pesangon"]
+    },
+    {
+      "id": "G02",
+      "text": "Pihak Kedua bersedia bekerja melebihi waktu kerja apabila dibutuhkan perusahaan tanpa upah lembur.",
+      "expected": "red_flag",
+      "topic_hint": "lembur tidak dibayar",
+      "match_keywords": ["lembur"]
+    },
+    {
+      "id": "G03",
+      "text": "Sebagai jaminan, Pihak Kedua menyerahkan ijazah asli kepada Pihak Pertama.",
+      "expected": "red_flag",
+      "topic_hint": "penahanan ijazah",
+      "match_keywords": ["ijazah"]
+    },
+    {
+      "id": "G04",
+      "text": "Pihak Pertama berhak memutuskan hubungan kerja secara sepihak sewaktu-waktu tanpa kewajiban memberikan pesangon.",
+      "expected": "red_flag",
+      "topic_hint": "PHK sepihak",
+      "match_keywords": ["sepihak", "pesangon", "PHK", "pemutusan"]
+    },
+    {
+      "id": "G05",
+      "text": "Pihak Pertama mendaftarkan Pihak Kedua sebagai peserta BPJS Kesehatan dan BPJS Ketenagakerjaan sesuai peraturan perundang-undangan.",
+      "expected": "safe",
+      "topic_hint": "jaminan sosial",
+      "match_keywords": ["BPJS"]
+    },
+    {
+      "id": "G06",
+      "text": "Pihak Kedua berhak atas cuti tahunan sebanyak 12 hari kerja setelah bekerja 12 bulan berturut-turut.",
+      "expected": "safe",
+      "topic_hint": "cuti tahunan",
+      "match_keywords": ["cuti"]
+    }
+  ]
+}

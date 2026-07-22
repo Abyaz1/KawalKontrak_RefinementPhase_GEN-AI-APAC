@@ -245,11 +245,43 @@ class RedFlag(BaseModel):
     email_template: str = ""
 
 
+class ReviewClause(BaseModel):
+    """
+    Klausul yang TIDAK bisa dinilai otomatis dan butuh tinjauan manusia.
+    Memenuhi PRD FR-05: jika sistem tidak menemukan dasar hukum yang
+    relevan, ia WAJIB menyatakan "tidak ditemukan referensi pasti" —
+    bukan menghilangkan klausul tersebut secara diam-diam.
+    """
+    pasal_kontrak: str = Field(
+        description="Kutipan asli klausul dari kontrak"
+    )
+    topik: str = Field(
+        description="Topik utama klausul"
+    )
+    alasan: str = Field(
+        description="Mengapa klausul ini butuh tinjauan manusia"
+    )
+    status: LegalStatus = Field(
+        description="TIDAK_DITEMUKAN atau AMBIGU"
+    )
+
+
 class AnalysisMetadata(BaseModel):
     """Metadata teknis tentang bagaimana analisis diproduksi."""
     engine: str
     rag_enabled: bool
     model: str
+    # Mode akses corpus: 'file_search' | 'file_data' | 'none'
+    rag_mode: str = "none"
+    # True jika hasil diambil dari cache (kontrak identik pernah dianalisis)
+    cached: bool = False
+    # Status Verifier: 'passed' (audit berjalan) | 'skipped' (tidak ada flag)
+    # | 'failed_open' (audit error — flag diloloskan tanpa filter, lihat UI)
+    verifier_status: str = "skipped"
+    # True jika teks kontrak melebihi batas dan dipotong sebelum dianalisis
+    truncated: bool = False
+    # Bahasa output yang diminta
+    locale: str = "id"
 
 
 class AnalysisResult(BaseModel):
@@ -263,6 +295,9 @@ class AnalysisResult(BaseModel):
     contract_hash: str
     red_flags: list[RedFlag]
     klausul_aman: list[SafeClause]
+    # Klausul yang butuh tinjauan manusia (FR-05: "tidak ditemukan
+    # referensi pasti" harus dinyatakan eksplisit, bukan disembunyikan)
+    klausul_tinjauan: list[ReviewClause] = Field(default_factory=list)
     ringkasan: ContractSummary
     risk_level: RiskLevel
     langkah_berikutnya: list[str]
@@ -286,4 +321,31 @@ class AnalyzeRequest(BaseModel):
     locale: str = Field(
         default="id",
         description="Bahasa output AI: 'id' (Indonesia) atau 'en' (English)"
+    )
+
+
+class TranscribeRequest(BaseModel):
+    """Body request POST /transcribe — transkripsi foto kontrak (FR-01)."""
+    imageBase64: str = Field(
+        min_length=100,
+        max_length=15_000_000,  # ~11 MB biner setelah decode base64
+        description="Isi file gambar kontrak dalam encoding base64 (tanpa prefix data URI)"
+    )
+    mimeType: str = Field(
+        description="MIME type gambar: image/jpeg, image/png, atau image/webp"
+    )
+    locale: str = Field(
+        default="id",
+        description="Bahasa pesan peringatan: 'id' atau 'en'"
+    )
+
+
+class TranscribeResponse(BaseModel):
+    """Respons POST /transcribe."""
+    text: str = Field(
+        description="Teks kontrak hasil transkripsi (verbatim)"
+    )
+    warning: Optional[str] = Field(
+        default=None,
+        description="Peringatan kualitas foto jika ada bagian yang tidak terbaca"
     )

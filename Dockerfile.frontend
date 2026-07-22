@@ -1,0 +1,30 @@
+# =============================================================
+# KawalKontrak.ai — Frontend Next.js
+# Build : docker build -f Dockerfile.frontend -t kawalkontrak-frontend .
+# Run   : docker run --env-file .env.local -p 3000:3000 kawalkontrak-frontend
+# =============================================================
+
+FROM node:22-alpine AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
+
+FROM node:22-alpine AS build
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+# Variabel NEXT_PUBLIC_* (Firebase) bersifat build-time — teruskan via
+# --build-arg / secret jika fitur login diperlukan di image produksi.
+RUN npm run build
+
+FROM node:22-alpine AS run
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/.next ./.next
+COPY --from=build /app/public ./public
+COPY --from=build /app/next.config.ts ./next.config.ts
+
+EXPOSE 3000
+CMD ["npm", "run", "start"]

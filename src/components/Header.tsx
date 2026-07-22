@@ -11,7 +11,7 @@ import s from './Header.module.css';
 export function Header() {
   const { locale, t, toggleLocale } = useI18n();
   const { theme, toggleTheme } = useTheme();
-  const { user, loading, loginWithGoogle, logout } = useAuth();
+  const { user, loading, authAvailable, loginWithGoogle, logout } = useAuth();
   const pathname = usePathname();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -108,7 +108,8 @@ export function Header() {
             </button>
           </div>
 
-          {/* Desktop Auth */}
+          {/* Desktop Auth — disembunyikan jika Firebase tidak dikonfigurasi */}
+          {authAvailable && (
           <div className={s.authWrapper}>
             {loading ? (
               <div className={s.avatarPlaceholder} />
@@ -155,6 +156,7 @@ export function Header() {
               </button>
             )}
           </div>
+          )}
 
           <button
             className={`${s.hamburger} ${mobileMenuOpen ? s.hamburgerOpen : ''}`}
@@ -199,7 +201,8 @@ export function Header() {
           </button>
         </div>
 
-        {/* Mobile Auth */}
+        {/* Mobile Auth — disembunyikan jika Firebase tidak dikonfigurasi */}
+        {authAvailable && (
         <div className={s.mobileAuth}>
           {loading ? (
             <div className={s.avatarPlaceholder} style={{ margin: '0 auto' }} />
@@ -242,6 +245,7 @@ export function Header() {
             </button>
           )}
         </div>
+        )}
       </div>
     </header>
   );

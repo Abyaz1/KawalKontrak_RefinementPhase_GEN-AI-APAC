@@ -4,47 +4,76 @@ KawalKontrak.ai — Agent 2: Legal Matcher
 
 Tanggung Jawab:
     Mencocokkan setiap klausul kontrak yang berpotensi bermasalah
-    dengan pasal-pasal regulasi ketenagakerjaan Indonesia, menggunakan
-    Gemini File Search (Managed RAG) pada dokumen PDF corpus yang sudah
-    diupload ke Gemini File API.
+    dengan pasal-pasal regulasi ketenagakerjaan Indonesia.
 
-    Ini adalah agen kunci yang memastikan sitasi hukum akurat — model
-    langsung merujuk ke dokumen UU asli, bukan mengandalkan memorinya.
+Dua mode akses corpus (lihat backend_python/config.py):
+  1. 'file_search' (direkomendasikan) — Gemini File Search Store:
+     managed RAG persisten dengan retrieval + sitasi otomatis. Karena
+     tool tidak bisa digabung dengan structured output, JSON diminta
+     lewat prompt dan diparse secara defensif.
+  2. 'file_data' (fallback dev) — melampirkan PDF corpus langsung ke
+     konteks. Structured output tetap dipakai. PERINGATAN: file di
+     File API kedaluwarsa 48 jam.
 
-Model: gemini-2.5-flash + File Search via fileData
-Input:  list[ExtractedClause], corpus_file_uri (str)
+Model:  KK_MODEL_CORE (default gemini-2.5-flash)
+Input:  list[ExtractedClause]
 Output: list[MatchedClause]
 """
 
 import logging
+
 from google import genai
 from google.genai import types
+from pydantic import TypeAdapter
 
+from backend_python.config import MODEL_CORE, corpus_mode, corpus_parts, corpus_tools
 from backend_python.models import ExtractedClause, LegalMatchResult, MatchedClause
+from backend_python.utils import locale_instruction, parse_json_response
 
 logger = logging.getLogger(__name__)
 
-_MODEL = "gemini-2.5-flash"
-
 _SYSTEM_PROMPT = """
 Anda adalah Analis Hukum Ketenagakerjaan Indonesia yang SANGAT teliti.
-Dokumen PDF yang dilampirkan berisi regulasi ketenagakerjaan resmi Indonesia
-(UU No. 6 Tahun 2023, PP 35/2021, PP 36/2021).
+Sumber kebenaran Anda adalah dokumen regulasi ketenagakerjaan resmi Indonesia
+(UU No. 6 Tahun 2023, PP 35/2021, PP 36/2021) yang tersedia melalui dokumen
+terlampir / pencarian dokumen (File Search).
 
 Tugas Anda:
 1. Untuk setiap klausul kontrak yang diberikan, cari pasal-pasal yang
-   LANGSUNG relevan dalam dokumen PDF tersebut.
+   LANGSUNG relevan dalam dokumen regulasi tersebut.
 2. Tentukan status hukum klausul:
-   - MELANGGAR : klausul bertentangan dengan ketentuan dalam PDF
-   - SESUAI    : klausul konsisten dengan ketentuan dalam PDF
+   - MELANGGAR : klausul bertentangan dengan ketentuan regulasi
+   - SESUAI    : klausul konsisten dengan ketentuan regulasi
    - AMBIGU    : klausul berpotensi bermasalah tapi membutuhkan konteks lebih
-   - TIDAK_DITEMUKAN: tidak ada regulasi terkait yang ditemukan dalam PDF
+   - TIDAK_DITEMUKAN: tidak ada regulasi terkait yang ditemukan
 
 PENTING:
-- Sitasi pasal HANYA dari dokumen PDF yang dilampirkan.
-- Jika tidak yakin, gunakan status TIDAK_DITEMUKAN — jangan mengarang pasal.
-- 'ketentuan_relevan' harus berupa kutipan singkat dari dokumen PDF.
+- Sitasi pasal HANYA dari dokumen regulasi — DILARANG mengarang pasal.
+- Jika tidak yakin, gunakan status TIDAK_DITEMUKAN.
+- 'ketentuan_relevan' harus berupa kutipan singkat dari dokumen regulasi.
 """.strip()
+
+# Instruksi format JSON untuk mode file_search (tool tidak bisa digabung
+# dengan response_schema, jadi formatnya dijelaskan eksplisit di prompt).
+_JSON_FORMAT_INSTRUCTION = """
+FORMAT OUTPUT (WAJIB): balas HANYA dengan JSON array valid, tanpa teks lain:
+[
+  {
+    "klausul_id": <int, indeks klausul dari daftar input>,
+    "status_hukum": "MELANGGAR" | "SESUAI" | "AMBIGU" | "TIDAK_DITEMUKAN",
+    "referensi_uu": [
+      {
+        "peraturan": "<nama peraturan, mis. 'UU No. 6 Tahun 2023'>",
+        "pasal": "<nomor pasal, mis. '81'>",
+        "judul": "<pokok bahasan pasal>",
+        "ketentuan_relevan": "<kutipan singkat isi pasal>"
+      }
+    ]
+  }
+]
+""".strip()
+
+_MATCH_LIST_ADAPTER = TypeAdapter(list[LegalMatchResult])
 
 
 def _build_clauses_prompt(clauses: list[ExtractedClause]) -> str:
@@ -58,26 +87,22 @@ def _build_clauses_prompt(clauses: list[ExtractedClause]) -> str:
     return "\n\n".join(lines)
 
 
-def match_laws(
+async def match_laws(
     clauses: list[ExtractedClause],
-    corpus_file_uri: str,
     client: genai.Client,
+    locale: str = "id",
 ) -> list[MatchedClause]:
     """
-    Mencocokkan klausul-klausul kontrak dengan peraturan perundang-undangan
-    menggunakan Gemini File Search (Managed RAG).
+    Mencocokkan klausul kontrak dengan peraturan perundang-undangan (async).
 
     Args:
-        clauses:          Daftar klausul hasil ekstraksi. Hanya klausul
-                          dengan `indikasi_masalah=True` yang diproses
-                          untuk menghemat token.
-        corpus_file_uri:  URI lengkap file PDF di Gemini File API,
-                          contoh: 'https://generativelanguage.googleapis.com/...'
-        client:           Instance Google GenAI client.
+        clauses: Daftar klausul hasil ekstraksi. Klausul dengan
+                 `indikasi_masalah=True` diprioritaskan untuk hemat token.
+        client:  Instance Google GenAI client.
+        locale:  Bahasa nilai output.
 
     Returns:
-        Daftar MatchedClause (klausul + status hukum + referensi UU).
-        Mengembalikan list kosong jika gagal.
+        Daftar MatchedClause. List kosong jika gagal.
     """
     # Filter hanya klausul yang berpotensi bermasalah untuk efisiensi token
     candidates = [c for c in clauses if c.indikasi_masalah]
@@ -91,43 +116,54 @@ def match_laws(
         logger.warning("Legal Matcher: Daftar klausul kosong, melewati tahap ini.")
         return []
 
-    logger.info(f"Legal Matcher: Memproses {len(candidates)} klausul dengan File Search...")
+    mode = corpus_mode()
+    logger.info(
+        f"Legal Matcher: Memproses {len(candidates)} klausul (corpus mode: {mode})..."
+    )
 
     clauses_text = _build_clauses_prompt(candidates)
+    user_text = (
+        f"Evaluasi klausul-klausul Surat Perjanjian Kerja berikut "
+        f"berdasarkan dokumen regulasi ketenagakerjaan:\n\n{clauses_text}"
+    )
 
     try:
-        response = client.models.generate_content(
-            model=_MODEL,
-            contents=[
-                types.Content(
-                    role="user",
-                    parts=[
-                        # Melampirkan dokumen PDF corpus sebagai konteks (File Search)
-                        types.Part(
-                            file_data=types.FileData(
-                                file_uri=corpus_file_uri,
-                                mime_type="application/pdf",
-                            )
-                        ),
-                        types.Part(
-                            text=(
-                                f"Evaluasi klausul-klausul Surat Perjanjian Kerja "
-                                f"berikut berdasarkan dokumen regulasi yang dilampirkan:\n\n"
-                                f"{clauses_text}"
-                            )
-                        ),
-                    ],
-                )
-            ],
-            config=types.GenerateContentConfig(
-                system_instruction=_SYSTEM_PROMPT,
-                temperature=0.1,  # Tingkat kreativitas rendah untuk akurasi sitasi
-                response_mime_type="application/json",
-                response_schema=list[LegalMatchResult],
-            ),
-        )
-
-        match_results: list[LegalMatchResult] = response.parsed  # type: ignore[assignment]
+        if mode == "file_search":
+            # Managed RAG: retrieval otomatis dari File Search Store.
+            response = await client.aio.models.generate_content(
+                model=MODEL_CORE,
+                contents=user_text,
+                config=types.GenerateContentConfig(
+                    system_instruction=(
+                        _SYSTEM_PROMPT
+                        + "\n\n"
+                        + _JSON_FORMAT_INSTRUCTION
+                        + locale_instruction(locale)
+                    ),
+                    temperature=0.1,  # Tingkat kreativitas rendah untuk akurasi sitasi
+                    tools=corpus_tools(),
+                ),
+            )
+            raw = parse_json_response(response.text)
+            match_results = _MATCH_LIST_ADAPTER.validate_python(raw)
+        else:
+            # Fallback: lampirkan PDF corpus langsung + structured output.
+            response = await client.aio.models.generate_content(
+                model=MODEL_CORE,
+                contents=[
+                    types.Content(
+                        role="user",
+                        parts=[*corpus_parts(), types.Part(text=user_text)],
+                    )
+                ],
+                config=types.GenerateContentConfig(
+                    system_instruction=_SYSTEM_PROMPT + locale_instruction(locale),
+                    temperature=0.1,
+                    response_mime_type="application/json",
+                    response_schema=list[LegalMatchResult],
+                ),
+            )
+            match_results = response.parsed  # type: ignore[assignment]
 
         if not match_results:
             logger.warning("Legal Matcher: Tidak ada hasil pencocokan yang dikembalikan.")

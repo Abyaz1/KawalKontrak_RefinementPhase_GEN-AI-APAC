@@ -139,6 +139,47 @@ export interface Dictionary {
   analysis_history_delete: string;
   analysis_history_flags: string;
 
+  // Analysis — photo input (FR-01 / FR-10)
+  analysis_tab_photo: string;
+  analysis_photo_guide_title: string;
+  analysis_photo_processing: string;
+  analysis_photo_review_hint: string;
+
+  // Analysis — demo mode (FR-14)
+  analysis_demo_label: string;
+  analysis_demo_risky: string;
+  analysis_demo_safe: string;
+
+  // Analysis — progressive disclosure (FR-11)
+  analysis_most_critical: string;
+  analysis_all_findings: string;
+
+  // Analysis — review clauses (FR-05)
+  analysis_tab_review: string;
+  analysis_review_note: string;
+
+  // Analysis — contract highlight view
+  analysis_tab_contract: string;
+  analysis_contract_hint: string;
+
+  // Analysis — transparency badges & warnings
+  analysis_engine_ai: string;
+  analysis_engine_local: string;
+  analysis_engine_cached: string;
+  analysis_verifier_warning: string;
+  analysis_truncated_warning: string;
+  analysis_share_copied: string;
+  analysis_email_copied: string;
+
+  // Analysis — real pipeline stages (FR-06)
+  stage_cache: string;
+  stage_extractor: string;
+  stage_legal_matcher: string;
+  stage_risk_grader: string;
+  stage_verifier: string;
+  stage_negotiator: string;
+  stage_local_fallback: string;
+
   // 404
   not_found_title: string;
   not_found_desc: string;
@@ -271,6 +312,45 @@ const id: Dictionary = {
   analysis_history_delete: 'Hapus',
   analysis_history_flags: 'red flags',
 
+  analysis_tab_photo: 'Foto Kontrak',
+  analysis_photo_guide_title: 'Panduan Foto yang Baik',
+  analysis_photo_processing: 'Membaca foto dengan AI Vision...',
+  analysis_photo_review_hint:
+    'Periksa hasil pembacaan foto di bawah ini. Koreksi bagian yang salah baca sebelum menekan tombol analisis.',
+
+  analysis_demo_label: 'Belum punya kontrak untuk dicoba?',
+  analysis_demo_risky: 'Coba Contoh Kontrak Bermasalah',
+  analysis_demo_safe: 'Coba Contoh Kontrak Wajar',
+
+  analysis_most_critical: 'Temuan Paling Kritis',
+  analysis_all_findings: 'Semua Temuan',
+
+  analysis_tab_review: 'Perlu Tinjauan',
+  analysis_review_note:
+    'Untuk klausul berikut, sistem tidak menemukan referensi pasti dalam korpus regulasi — sesuai prinsip anti-halusinasi, kami tidak mengarang pasal. Tinjau klausul ini bersama LBH/serikat pekerja.',
+
+  analysis_tab_contract: 'Teks Kontrak',
+  analysis_contract_hint:
+    'Teks kontrak Anda dengan sorotan: merah = klausul bermasalah, hijau = klausul aman. (Hanya tersedia untuk analisis yang baru dijalankan.)',
+
+  analysis_engine_ai: 'AI Multi-Agent + RAG',
+  analysis_engine_local: 'Mesin Pola Lokal (AI tidak tersedia)',
+  analysis_engine_cached: 'dari cache',
+  analysis_verifier_warning:
+    'Audit anti-halusinasi tidak dapat dijalankan untuk hasil ini — sitasi hukum belum terverifikasi otomatis. Periksa referensi pasal secara mandiri.',
+  analysis_truncated_warning:
+    'Kontrak Anda sangat panjang — hanya bagian awal yang dianalisis. Untuk hasil lengkap, pecah kontrak menjadi beberapa bagian.',
+  analysis_share_copied: '✅ Ringkasan hasil disalin!',
+  analysis_email_copied: '📋 Template email disalin!',
+
+  stage_cache: 'Memeriksa cache analisis',
+  stage_extractor: 'Mengurai klausul kontrak',
+  stage_legal_matcher: 'Mencocokkan dengan UU/PP (File Search)',
+  stage_risk_grader: 'Menilai tingkat risiko tiap klausul',
+  stage_verifier: 'Memverifikasi sitasi hukum (anti-halusinasi)',
+  stage_negotiator: 'Menyusun template email negosiasi',
+  stage_local_fallback: 'Analisis pola lokal (server AI tidak tersedia)',
+
   not_found_title: 'Halaman Tidak Ditemukan',
   not_found_desc: 'Maaf, halaman yang Anda cari tidak ada atau telah dipindahkan.',
   not_found_home: '← Kembali ke Beranda',
@@ -401,6 +481,45 @@ const en: Dictionary = {
   analysis_history_view: 'View',
   analysis_history_delete: 'Delete',
   analysis_history_flags: 'red flags',
+
+  analysis_tab_photo: 'Contract Photo',
+  analysis_photo_guide_title: 'Good Photo Guidelines',
+  analysis_photo_processing: 'Reading photo with AI Vision...',
+  analysis_photo_review_hint:
+    'Review the photo transcription below. Correct any misread parts before pressing analyze.',
+
+  analysis_demo_label: 'No contract on hand to try?',
+  analysis_demo_risky: 'Try a Problematic Sample Contract',
+  analysis_demo_safe: 'Try a Fair Sample Contract',
+
+  analysis_most_critical: 'Most Critical Finding',
+  analysis_all_findings: 'All Findings',
+
+  analysis_tab_review: 'Needs Review',
+  analysis_review_note:
+    'For the following clauses, the system found no definitive reference in the regulation corpus — per our anti-hallucination principle, we never invent articles. Review these clauses with legal aid/your union.',
+
+  analysis_tab_contract: 'Contract Text',
+  analysis_contract_hint:
+    'Your contract text with highlights: red = problematic clauses, green = safe clauses. (Only available for freshly run analyses.)',
+
+  analysis_engine_ai: 'Multi-Agent AI + RAG',
+  analysis_engine_local: 'Local Pattern Engine (AI unavailable)',
+  analysis_engine_cached: 'from cache',
+  analysis_verifier_warning:
+    'The anti-hallucination audit could not run for this result — legal citations have not been auto-verified. Double-check the referenced articles yourself.',
+  analysis_truncated_warning:
+    'Your contract is very long — only the first part was analyzed. For complete results, split the contract into parts.',
+  analysis_share_copied: '✅ Result summary copied!',
+  analysis_email_copied: '📋 Email template copied!',
+
+  stage_cache: 'Checking analysis cache',
+  stage_extractor: 'Parsing contract clauses',
+  stage_legal_matcher: 'Matching against labor laws (File Search)',
+  stage_risk_grader: 'Grading risk of each clause',
+  stage_verifier: 'Verifying legal citations (anti-hallucination)',
+  stage_negotiator: 'Drafting negotiation email templates',
+  stage_local_fallback: 'Local pattern analysis (AI server unavailable)',
 
   not_found_title: 'Page Not Found',
   not_found_desc: 'Sorry, the page you are looking for does not exist or has been moved.',

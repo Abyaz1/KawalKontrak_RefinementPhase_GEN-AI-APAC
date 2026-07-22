@@ -54,6 +54,13 @@ export async function analyzeContractLocal(contractText: string, locale: string 
         }
       }
 
+      // Pola bisa menyimpan template sebagai objek {subject, body} —
+      // API selalu mengirim string agar kontrak tipe frontend sederhana.
+      const template =
+        typeof pattern.email_template === 'string'
+          ? pattern.email_template
+          : `Subject: ${pattern.email_template.subject}\n\n${pattern.email_template.body}`;
+
       redFlags.push({
         flag_id: pattern.id,
         severity: pattern.severity,
@@ -62,7 +69,7 @@ export async function analyzeContractLocal(contractText: string, locale: string 
         referensi_uu: pattern.pasal_references,
         rekomendasi_negosiasi: pattern.recommendation,
         analogi_sederhana: pattern.analogy,
-        email_template: pattern.email_template as string,
+        email_template: template,
       });
     }
   }
@@ -86,6 +93,7 @@ export async function analyzeContractLocal(contractText: string, locale: string 
     contract_hash: hash,
     red_flags: redFlags,
     klausul_aman: safeClauses,
+    klausul_tinjauan: [],
     ringkasan: {
       jenis: 'Kontrak Kerja (Umum)',
       status: risk_level === 'LOW' ? 'Aman' : 'Membutuhkan Peninjauan',

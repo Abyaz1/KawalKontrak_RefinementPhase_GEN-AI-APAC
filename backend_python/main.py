@@ -10,24 +10,43 @@ Cara menjalankan (dari root direktori proyek):
     python -m uvicorn backend_python.main:app --reload --port 8000
 
 Endpoint utama:
-    POST /analyze   → Analisis kontrak kerja dengan multi-agent pipeline
-    GET  /health    → Cek status server (untuk monitoring & load balancer)
-    GET  /          → Info API (untuk debugging)
+    POST /analyze         → Analisis kontrak (respons tunggal, kompatibilitas)
+    POST /analyze/stream  → Analisis kontrak dengan progres real-time (NDJSON)
+    POST /transcribe      → Transkripsi foto kontrak via Gemini Vision (FR-01)
+    GET  /health          → Cek status server (untuk monitoring & load balancer)
+    GET  /                → Info API (untuk debugging)
+
+Keamanan:
+    Jika BACKEND_SHARED_SECRET di-set, semua endpoint (kecuali /health
+    dan /) mewajibkan header 'x-backend-secret' — sehingga hanya proxy
+    Next.js yang memegang secret yang bisa memicu panggilan Gemini.
 """
 
+import base64
+import binascii
+import json
 import logging
-import os
 import sys
 from contextlib import asynccontextmanager
 from typing import Any
 
-from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
+from google import genai
 
-from backend_python.models import AnalyzeRequest, AnalysisResult
-from backend_python.orchestrator import run_analysis_pipeline
+from backend_python import config
+from backend_python.agents.transcriber import transcribe_contract_image
+from backend_python.models import (
+    AnalysisResult,
+    AnalyzeRequest,
+    TranscribeRequest,
+    TranscribeResponse,
+)
+from backend_python.orchestrator import (
+    run_analysis_pipeline,
+    run_analysis_pipeline_stream,
+)
 
 # ── Konfigurasi Logging ───────────────────────────────────────────────────────
 
@@ -38,22 +57,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# ── Load Environment Variables ────────────────────────────────────────────────
+# ── Validasi Konfigurasi ─────────────────────────────────────────────────────
 
-# Cari file .env di direktori backend_python/
-_env_path = os.path.join(os.path.dirname(__file__), ".env")
-load_dotenv(dotenv_path=_env_path)
-
-_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-_CORPUS_FILE_URI = os.getenv("GEMINI_CORPUS_FILE_URI")
-
-if not _GEMINI_API_KEY:
-    logger.error("GEMINI_API_KEY tidak ditemukan di environment variable!")
+_problems = config.validate_config()
+if _problems:
+    for p in _problems:
+        logger.error(p)
     sys.exit(1)
 
-if not _CORPUS_FILE_URI:
-    logger.error("GEMINI_CORPUS_FILE_URI tidak ditemukan di environment variable!")
-    sys.exit(1)
+_ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp"}
+_MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 
 
 # ── Lifespan (startup & shutdown hooks) ──────────────────────────────────────
@@ -63,8 +76,10 @@ async def lifespan(app: FastAPI):
     """Dijalankan satu kali saat server startup dan shutdown."""
     logger.info("=" * 60)
     logger.info("KawalKontrak.ai Python Backend — Starting up")
-    logger.info(f"  Corpus URI : {_CORPUS_FILE_URI[:60]}...")
-    logger.info(f"  API Key    : {'*' * 8}{_GEMINI_API_KEY[-4:]}")  # type: ignore
+    logger.info(f"  Corpus mode : {config.corpus_mode()}")
+    logger.info(f"  Model core  : {config.MODEL_CORE}")
+    logger.info(f"  Model lite  : {config.MODEL_LITE}")
+    logger.info(f"  Auth        : {'shared-secret AKTIF' if config.SHARED_SECRET else 'TERBUKA (dev only)'}")
     logger.info("=" * 60)
     yield  # Server berjalan di sini
     logger.info("KawalKontrak.ai Python Backend — Shutting down")
@@ -76,9 +91,9 @@ app = FastAPI(
     title="KawalKontrak.ai — AI Backend",
     description=(
         "Backend Python multi-agent untuk analisis kontrak kerja Indonesia. "
-        "Menggunakan Google Gemini API dengan Managed RAG (File Search)."
+        "Menggunakan Google Gemini API dengan Managed RAG (File Search Store)."
     ),
-    version="2.0.0",
+    version="3.0.0",
     lifespan=lifespan,
 )
 
@@ -93,6 +108,31 @@ app.add_middleware(
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
+
+
+# ── Middleware: Shared Secret (proteksi endpoint AI) ─────────────────────────
+
+@app.middleware("http")
+async def shared_secret_middleware(request: Request, call_next):
+    """
+    Menolak request tanpa header 'x-backend-secret' yang benar,
+    kecuali untuk endpoint publik (/health, /) atau jika secret tidak
+    dikonfigurasi (mode development).
+    """
+    public_paths = {"/", "/health", "/docs", "/openapi.json"}
+    if config.SHARED_SECRET and request.url.path not in public_paths:
+        provided = request.headers.get("x-backend-secret", "")
+        if provided != config.SHARED_SECRET:
+            return JSONResponse(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                content={
+                    "error": {
+                        "code": "UNAUTHORIZED",
+                        "message": "Header x-backend-secret tidak valid.",
+                    }
+                },
+            )
+    return await call_next(request)
 
 
 # ── Exception Handler Global ──────────────────────────────────────────────────
@@ -119,14 +159,15 @@ async def root() -> dict[str, Any]:
     """Informasi dasar API (untuk verifikasi deployment)."""
     return {
         "service": "KawalKontrak.ai Python AI Backend",
-        "version": "2.0.0",
+        "version": "3.0.0",
         "status": "online",
+        "corpus_mode": config.corpus_mode(),
         "pipeline": [
-            "1. Extractor (gemini-2.5-flash)",
-            "2. Legal Matcher (gemini-2.5-flash + File Search)",
-            "3. Risk Grader (gemini-2.5-flash)",
-            "4. Verifier (gemini-2.5-flash)",
-            "5. Negotiator (gemini-2.5-flash)",
+            f"0. Transcriber — foto/scan ({config.MODEL_CORE}, vision)",
+            f"1. Extractor ({config.MODEL_LITE})",
+            f"2. Legal Matcher ({config.MODEL_CORE} + File Search)",
+            f"3. Risk Grader ({config.MODEL_CORE})",
+            f"4. Verifier ({config.MODEL_CORE} + File Search) ∥ 5. Negotiator ({config.MODEL_LITE})",
         ],
     }
 
@@ -144,39 +185,25 @@ async def health_check() -> dict[str, str]:
     "/analyze",
     response_model=AnalysisResult,
     tags=["Analysis"],
-    summary="Analisis Kontrak Kerja",
+    summary="Analisis Kontrak Kerja (respons tunggal)",
     description=(
-        "Menerima teks kontrak kerja dan menjalankan pipeline 5-agent "
-        "untuk mendeteksi red flags, mencocokkan regulasi, dan menghasilkan "
-        "template negosiasi."
+        "Menerima teks kontrak kerja dan menjalankan pipeline multi-agent. "
+        "Untuk progres real-time gunakan POST /analyze/stream."
     ),
 )
 async def analyze_contract(request: AnalyzeRequest) -> AnalysisResult:
-    """
-    Endpoint utama: menerima teks kontrak dan mengembalikan hasil analisis.
-
-    Body (JSON):
-        contractText  (str, wajib) : Teks lengkap kontrak kerja.
-        region        (str, opsional): Wilayah kerja untuk validasi UMK.
-        locale        (str, opsional): 'id' (default) atau 'en'.
-
-    Returns:
-        AnalysisResult dengan red_flags, klausul_aman, ringkasan, dll.
-    """
+    """Endpoint kompatibilitas: menunggu pipeline selesai, lalu kirim hasil."""
     logger.info(
         f"POST /analyze — kontrak {len(request.contractText)} karakter, "
         f"region='{request.region}', locale='{request.locale}'"
     )
 
-    # Jalankan pipeline multi-agent
-    result = run_analysis_pipeline(
+    result = await run_analysis_pipeline(
         contract_text=request.contractText,
-        api_key=_GEMINI_API_KEY,          # type: ignore[arg-type]
-        corpus_file_uri=_CORPUS_FILE_URI,  # type: ignore[arg-type]
+        api_key=config.GEMINI_API_KEY,  # type: ignore[arg-type]
         locale=request.locale,
     )
 
-    # Kembalikan HTTP 500 jika pipeline gagal total
     if result.status == "failed":
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -187,3 +214,98 @@ async def analyze_contract(request: AnalyzeRequest) -> AnalysisResult:
         )
 
     return result
+
+
+@app.post(
+    "/analyze/stream",
+    tags=["Analysis"],
+    summary="Analisis Kontrak Kerja dengan progres real-time (NDJSON)",
+    description=(
+        "Memancarkan satu objek JSON per baris (NDJSON): event "
+        '{"type":"stage",...} untuk tiap tahap pipeline, ditutup '
+        '{"type":"result","data":{...}} berisi hasil akhir. '
+        "Memenuhi PRD FR-06 — transparansi proses AI."
+    ),
+)
+async def analyze_contract_stream(request: AnalyzeRequest) -> StreamingResponse:
+    """Endpoint streaming: progres tiap agent dikirim saat terjadi."""
+    logger.info(
+        f"POST /analyze/stream — kontrak {len(request.contractText)} karakter, "
+        f"locale='{request.locale}'"
+    )
+
+    async def event_generator():
+        async for event in run_analysis_pipeline_stream(
+            contract_text=request.contractText,
+            api_key=config.GEMINI_API_KEY,  # type: ignore[arg-type]
+            locale=request.locale,
+        ):
+            yield json.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",  # Matikan buffering reverse-proxy
+        },
+    )
+
+
+@app.post(
+    "/transcribe",
+    response_model=TranscribeResponse,
+    tags=["Analysis"],
+    summary="Transkripsi Foto Kontrak (Gemini Vision)",
+    description=(
+        "Menerima foto/scan kontrak (base64) dan mengembalikan teks "
+        "verbatim hasil transkripsi vision. Memenuhi PRD FR-01."
+    ),
+)
+async def transcribe_image(request: TranscribeRequest) -> TranscribeResponse:
+    """Transkripsi foto kontrak → teks yang bisa dianalisis pipeline."""
+    if request.mimeType not in _ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "UNSUPPORTED_IMAGE",
+                "message": "Format gambar harus JPEG, PNG, atau WebP.",
+            },
+        )
+
+    try:
+        image_bytes = base64.b64decode(request.imageBase64, validate=True)
+    except (binascii.Error, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "INVALID_BASE64", "message": "Encoding base64 tidak valid."},
+        )
+
+    if len(image_bytes) > _MAX_IMAGE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={"code": "IMAGE_TOO_LARGE", "message": "Ukuran gambar melebihi 10 MB."},
+        )
+
+    client = genai.Client(api_key=config.GEMINI_API_KEY)
+    text, warning = await transcribe_contract_image(
+        image_bytes, request.mimeType, client, request.locale
+    )
+
+    if len(text.strip()) < 50:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "TRANSCRIPTION_FAILED",
+                "message": (
+                    "Teks kontrak tidak dapat dibaca dari foto. "
+                    "Coba foto ulang dengan pencahayaan lebih baik dan pastikan "
+                    "seluruh halaman terlihat."
+                    if request.locale == "id"
+                    else "Could not read contract text from the photo. Retake the "
+                    "photo with better lighting and make sure the whole page is visible."
+                ),
+            },
+        )
+
+    return TranscribeResponse(text=text, warning=warning)

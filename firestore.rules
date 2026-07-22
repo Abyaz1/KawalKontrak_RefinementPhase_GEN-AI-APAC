@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// KawalKontrak.ai — Aturan Keamanan Cloud Firestore
+// ===================================================
+// Deploy dengan: firebase deploy --only firestore:rules
+//
+// Prinsip:
+//   1. Riwayat analisis hidup di users/{uid}/analyses/{id} — hanya
+//      pemiliknya (uid yang sama) yang boleh membaca/menulis/menghapus.
+//   2. Semua path lain ditolak secara default (deny-by-default).
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Riwayat analisis per pengguna
+    match /users/{userId}/analyses/{analysisId} {
+      allow read, create, update, delete:
+        if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Tolak semua akses lain
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

@@ -1,74 +1,115 @@
-import { db } from './firebase';
-import { collection, query, where, getDocs, doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore';
+/**
+ * KawalKontrak.ai — Lapisan Data Firestore (Riwayat Analisis)
+ * =============================================================
+ *
+ * Perbaikan hasil audit (C3/C4):
+ *   1. Dokumen kini disimpan di SUBCOLLECTION per pengguna
+ *      (`users/{uid}/analyses/{id}`) — bukan koleksi global 'contracts',
+ *      sehingga aturan keamanan per-pemilik sederhana & ID antar user
+ *      tidak mungkin bertabrakan.
+ *   2. Semua operasi (termasuk delete) mewajibkan uid pemilik.
+ *   3. ID dokumen memakai crypto.randomUUID() (bukan timestamp).
+ *   4. Tipe `any` dihapus.
+ *   5. Yang disimpan HANYA hasil analisis — teks kontrak mentah tidak
+ *      pernah dikirim ke cloud (prinsip privacy-first TRD §6).
+ *
+ * Aturan keamanan server-side ada di `firestore.rules` (root repo) —
+ * deploy dengan: firebase deploy --only firestore:rules
+ */
 
-export interface HistoryEntry {
+import { db } from './firebase';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  Firestore,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+  Timestamp,
+} from 'firebase/firestore';
+
+/** Firestore hanya dipakai ketika pengguna login — dan login hanya
+ *  mungkin jika Firebase terkonfigurasi. Guard ini menjaga type-safety. */
+function requireDb(): Firestore {
+  if (!db) {
+    throw new Error('Firebase tidak dikonfigurasi — fitur riwayat cloud tidak tersedia.');
+  }
+  return db;
+}
+
+export interface HistoryEntry<TResult = unknown> {
   id: string;
   date: string;
   riskLevel: string;
   riskLabel: string;
   totalFlags: number;
-  result: any; // Full AnalysisResult
-  userId?: string;
-  createdAt?: any;
+  /** Hasil analisis lengkap (format UI) — tanpa teks kontrak mentah */
+  result: TResult;
+  createdAt?: Date;
+}
+
+function userAnalysesCollection(userId: string) {
+  return collection(requireDb(), 'users', userId, 'analyses');
 }
 
 /**
- * Saves a contract analysis entry to Firestore.
+ * Menyimpan satu entri riwayat analisis milik pengguna.
  */
-export async function saveContractAnalysis(userId: string, entry: Omit<HistoryEntry, 'userId'>) {
-  const docRef = doc(db, 'contracts', entry.id);
+export async function saveContractAnalysis<TResult>(
+  userId: string,
+  entry: HistoryEntry<TResult>,
+): Promise<void> {
+  const docRef = doc(userAnalysesCollection(userId), entry.id);
   await setDoc(docRef, {
-    ...entry,
-    userId,
-    createdAt: serverTimestamp() // Database-side timestamp
+    date: entry.date,
+    riskLevel: entry.riskLevel,
+    riskLabel: entry.riskLabel,
+    totalFlags: entry.totalFlags,
+    result: entry.result,
+    createdAt: serverTimestamp(), // Timestamp sisi server
   });
 }
 
 /**
- * Fetches all contract analyses for a specific user, sorted by date in memory
- * to avoid requiring composite Firestore indexes.
+ * Mengambil seluruh riwayat analisis milik pengguna,
+ * diurutkan terbaru dulu (sort in-memory — tanpa composite index).
  */
-export async function getUserAnalyses(userId: string): Promise<HistoryEntry[]> {
-  try {
-    const q = query(
-      collection(db, 'contracts'),
-      where('userId', '==', userId)
-    );
-    
-    const querySnapshot = await getDocs(q);
-    const entries: any[] = [];
-    
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      entries.push({
-        id: doc.id,
-        date: data.date,
-        riskLevel: data.riskLevel,
-        riskLabel: data.riskLabel,
-        totalFlags: data.totalFlags,
-        result: data.result,
-        // Convert Firestore timestamp or fallback to date string parse
-        createdAt: data.createdAt ? data.createdAt.toDate() : new Date(data.date)
-      });
-    });
-    
-    // Sort in memory descending (newest first)
-    return entries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-  } catch (error) {
-    console.error('Error fetching user analyses from Firestore:', error);
-    throw error;
-  }
+export async function getUserAnalyses<TResult>(
+  userId: string,
+): Promise<HistoryEntry<TResult>[]> {
+  const snapshot = await getDocs(userAnalysesCollection(userId));
+
+  const entries: HistoryEntry<TResult>[] = snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    const createdAt =
+      data.createdAt instanceof Timestamp
+        ? data.createdAt.toDate()
+        : new Date(typeof data.date === 'string' ? data.date : Date.now());
+    return {
+      id: docSnap.id,
+      date: String(data.date ?? ''),
+      riskLevel: String(data.riskLevel ?? ''),
+      riskLabel: String(data.riskLabel ?? ''),
+      totalFlags: Number(data.totalFlags ?? 0),
+      result: data.result as TResult,
+      createdAt,
+    };
+  });
+
+  return entries.sort(
+    (a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0),
+  );
 }
 
 /**
- * Deletes a contract analysis entry from Firestore.
+ * Menghapus satu entri riwayat. Membutuhkan uid pemilik —
+ * path dokumen berada di bawah `users/{uid}`, sehingga Firestore rules
+ * menjamin pengguna hanya bisa menghapus miliknya sendiri.
  */
-export async function deleteUserAnalysis(analysisId: string) {
-  try {
-    const docRef = doc(db, 'contracts', analysisId);
-    await deleteDoc(docRef);
-  } catch (error) {
-    console.error('Error deleting analysis from Firestore:', error);
-    throw error;
-  }
+export async function deleteUserAnalysis(
+  userId: string,
+  analysisId: string,
+): Promise<void> {
+  await deleteDoc(doc(userAnalysesCollection(userId), analysisId));
 }

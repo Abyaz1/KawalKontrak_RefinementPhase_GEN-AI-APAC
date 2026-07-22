@@ -2,11 +2,13 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, firebaseEnabled } from '@/lib/firebase';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
+  /** False jika konfigurasi Firebase tidak tersedia — fitur login disembunyikan */
+  authAvailable: boolean;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -14,15 +16,18 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
+  authAvailable: false,
   loginWithGoogle: async () => {},
   logout: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Firebase opsional: tanpa konfigurasi, tidak ada sesi yang perlu ditunggu
+  const [loading, setLoading] = useState<boolean>(() => Boolean(auth));
 
   useEffect(() => {
+    if (!auth) return;
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
@@ -32,6 +37,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const loginWithGoogle = async () => {
+    if (!auth || !googleProvider) {
+      console.warn('Firebase tidak dikonfigurasi — fitur login tidak tersedia.');
+      return;
+    }
     try {
       await signInWithPopup(auth, googleProvider);
     } catch (error) {
@@ -41,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
+    if (!auth) return;
     try {
       await signOut(auth);
     } catch (error) {
@@ -50,7 +60,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, loginWithGoogle, logout }}>
+    <AuthContext.Provider
+      value={{ user, loading, authAvailable: firebaseEnabled, loginWithGoogle, logout }}
+    >
       {children}
     </AuthContext.Provider>
   );

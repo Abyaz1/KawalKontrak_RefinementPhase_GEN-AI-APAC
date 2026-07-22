@@ -7,24 +7,28 @@ Tanggung Jawab:
     daftar klausul terstruktur. Agen ini TIDAK melakukan penghakiman
     hukum — tugasnya murni ekstraksi dan klasifikasi topik.
 
-Model: gemini-2.5-flash (ringan, cepat, hemat biaya)
+Model:  KK_MODEL_LITE (default gemini-2.5-flash-lite — sesuai TRD §3,
+        tugas ekstraksi volume tinggi memakai model termurah)
 Input:  Teks kontrak kerja mentah (str)
 Output: list[ExtractedClause]
 """
 
 import logging
+
 from google import genai
 from google.genai import types
 
+from backend_python.config import MODEL_LITE
 from backend_python.models import ExtractedClause
+from backend_python.utils import locale_instruction
 
 logger = logging.getLogger(__name__)
 
-# Batas karakter teks kontrak yang dikirim ke model (hemat token)
-_MAX_CONTRACT_CHARS = 30_000
-
-# Nama model yang digunakan (Flash ringan untuk tugas ekstraksi)
-_MODEL = "gemini-2.5-flash"
+# Batas karakter teks kontrak yang dikirim ke model.
+# Kontrak ≤ 5 halaman ± 15.000 karakter; 60.000 memberi ruang untuk kontrak
+# panjang. Jika terpotong, orchestrator menandai metadata.truncated = True
+# sehingga UI dapat memperingatkan pengguna (bukan memotong diam-diam).
+MAX_CONTRACT_CHARS = 60_000
 
 _SYSTEM_PROMPT = """
 Anda adalah seorang paralegal spesialis ketenagakerjaan Indonesia.
@@ -41,39 +45,39 @@ Panduan:
 """.strip()
 
 
-def extract_clauses(contract_text: str, client: genai.Client) -> list[ExtractedClause]:
+async def extract_clauses(
+    contract_text: str,
+    client: genai.Client,
+    locale: str = "id",
+) -> list[ExtractedClause]:
     """
-    Mengekstrak semua klausul dari teks kontrak kerja.
+    Mengekstrak semua klausul dari teks kontrak kerja (async).
 
     Args:
-        contract_text: Teks mentah Surat Perjanjian Kerja.
-        client:        Instance Google GenAI client yang sudah dikonfigurasi.
+        contract_text: Teks mentah SPK (sudah dipotong orchestrator bila perlu).
+        client:        Instance Google GenAI client.
+        locale:        Bahasa nilai output ('id' / 'en').
 
     Returns:
-        Daftar ExtractedClause. Mengembalikan list kosong jika gagal.
+        Daftar ExtractedClause. List kosong jika gagal.
     """
     logger.info("Extractor: Memulai ekstraksi klausul...")
 
-    # Potong teks jika terlalu panjang untuk menghemat token
-    trimmed_text = contract_text[:_MAX_CONTRACT_CHARS]
-
     try:
-        response = client.models.generate_content(
-            model=_MODEL,
+        response = await client.aio.models.generate_content(
+            model=MODEL_LITE,
             contents=(
                 f"Berikut adalah teks Surat Perjanjian Kerja (SPK):\n\n"
-                f"{trimmed_text}"
+                f"{contract_text}"
             ),
             config=types.GenerateContentConfig(
-                system_instruction=_SYSTEM_PROMPT,
+                system_instruction=_SYSTEM_PROMPT + locale_instruction(locale),
                 temperature=0.1,  # Rendah = deterministik, lebih presisi untuk ekstraksi
                 response_mime_type="application/json",
                 response_schema=list[ExtractedClause],
             ),
         )
 
-        # Gemini dengan Structured Output sudah menghasilkan objek Python,
-        # bukan string JSON — kita tinggal akses .parsed
         result: list[ExtractedClause] = response.parsed  # type: ignore[assignment]
 
         if not result:
