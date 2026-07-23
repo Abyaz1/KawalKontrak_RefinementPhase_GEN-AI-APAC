@@ -1,47 +1,86 @@
 {
-  "description": "Golden set klausul kontrak berlabel untuk uji regresi akurasi pipeline (TRD §10). Setiap perubahan prompt/model harus tetap lulus set ini.",
+  "description": "Golden set KawalKontrak.ai — 10 skenario kontrak berlabel sesuai Testing Plan §6. Dipakai untuk regresi otomatis setiap kali prompt/model diubah. Ground truth divalidasi manual.",
+  "version": "2.0",
   "clauses": [
     {
       "id": "G01",
       "text": "Perjanjian berakhir demi hukum dan Pihak Kedua tidak berhak atas kompensasi maupun pesangon dalam bentuk apapun.",
       "expected": "red_flag",
       "topic_hint": "kompensasi PKWT",
-      "match_keywords": ["kompensasi", "pesangon"]
+      "match_keywords": ["kompensasi", "pesangon"],
+      "law_reference": "Pasal 61A UU No. 6 Tahun 2023"
     },
     {
       "id": "G02",
       "text": "Pihak Kedua bersedia bekerja melebihi waktu kerja apabila dibutuhkan perusahaan tanpa upah lembur.",
       "expected": "red_flag",
       "topic_hint": "lembur tidak dibayar",
-      "match_keywords": ["lembur"]
+      "match_keywords": ["lembur"],
+      "law_reference": "Pasal 78 UU No. 6 Tahun 2023"
     },
     {
       "id": "G03",
-      "text": "Sebagai jaminan, Pihak Kedua menyerahkan ijazah asli kepada Pihak Pertama.",
+      "text": "Sebagai jaminan, Pihak Kedua menyerahkan ijazah asli kepada Pihak Pertama selama masa kontrak.",
       "expected": "red_flag",
       "topic_hint": "penahanan ijazah",
-      "match_keywords": ["ijazah"]
+      "match_keywords": ["ijazah"],
+      "law_reference": "Surat Edaran Kemnaker No. SE.M/3/HK.04/III/2023"
     },
     {
       "id": "G04",
       "text": "Pihak Pertama berhak memutuskan hubungan kerja secara sepihak sewaktu-waktu tanpa kewajiban memberikan pesangon.",
       "expected": "red_flag",
-      "topic_hint": "PHK sepihak",
-      "match_keywords": ["sepihak", "pesangon", "PHK", "pemutusan"]
+      "topic_hint": "PHK sepihak tanpa pesangon",
+      "match_keywords": ["sepihak", "pesangon", "PHK", "pemutusan"],
+      "law_reference": "Pasal 156 UU No. 6 Tahun 2023"
     },
     {
       "id": "G05",
-      "text": "Pihak Pertama mendaftarkan Pihak Kedua sebagai peserta BPJS Kesehatan dan BPJS Ketenagakerjaan sesuai peraturan perundang-undangan.",
+      "text": "Pihak Pertama mendaftarkan Pihak Kedua sebagai peserta BPJS Kesehatan dan BPJS Ketenagakerjaan sesuai peraturan perundang-undangan yang berlaku.",
       "expected": "safe",
-      "topic_hint": "jaminan sosial",
-      "match_keywords": ["BPJS"]
+      "topic_hint": "jaminan sosial BPJS",
+      "match_keywords": ["BPJS"],
+      "law_reference": "UU No. 24 Tahun 2011 tentang BPJS"
     },
     {
       "id": "G06",
       "text": "Pihak Kedua berhak atas cuti tahunan sebanyak 12 hari kerja setelah bekerja 12 bulan berturut-turut.",
       "expected": "safe",
-      "topic_hint": "cuti tahunan",
-      "match_keywords": ["cuti"]
+      "topic_hint": "cuti tahunan sesuai standar",
+      "match_keywords": ["cuti"],
+      "law_reference": "Pasal 79 UU No. 6 Tahun 2023"
+    },
+    {
+      "id": "G07",
+      "text": "Apabila Pihak Kedua mengundurkan diri sebelum masa kontrak berakhir, Pihak Kedua wajib membayar denda sebesar Rp 50.000.000 kepada Pihak Pertama.",
+      "expected": "red_flag",
+      "topic_hint": "denda resign tidak sah",
+      "match_keywords": ["denda", "resign", "mengundurkan"],
+      "law_reference": "Pasal 62 UU No. 6 Tahun 2023"
+    },
+    {
+      "id": "G08",
+      "text": "Gaji Pihak Kedua adalah Rp 1.800.000 per bulan.",
+      "expected": "red_flag",
+      "topic_hint": "upah di bawah UMK Jakarta 2025",
+      "match_keywords": ["gaji", "upah", "minimum"],
+      "law_reference": "PP No. 49 Tahun 2025 / UMK Jakarta"
+    },
+    {
+      "id": "G09",
+      "text": "Pihak Pertama memberikan tunjangan hari raya (THR) keagamaan kepada Pihak Kedua sesuai peraturan perundang-undangan yang berlaku.",
+      "expected": "safe",
+      "topic_hint": "THR sesuai regulasi",
+      "match_keywords": ["THR", "tunjangan hari raya"],
+      "law_reference": "PP No. 36 Tahun 2021 tentang Pengupahan"
+    },
+    {
+      "id": "G10",
+      "text": "Pihak Kedua dilarang bekerja di perusahaan manapun yang dianggap kompetitor oleh Pihak Pertama selama 5 tahun setelah kontrak berakhir.",
+      "expected": "red_flag",
+      "topic_hint": "non-compete clause berlebihan",
+      "match_keywords": ["kompetitor", "nonkompetisi", "dilarang bekerja"],
+      "law_reference": "Pasal 28 UUD 1945 (hak bekerja)"
     }
   ]
 }
