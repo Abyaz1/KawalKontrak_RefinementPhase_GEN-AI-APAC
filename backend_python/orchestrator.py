@@ -72,13 +72,13 @@ logger = logging.getLogger(__name__)
 _DISCLAIMER_ID = (
     "Analisis ini dihasilkan oleh Kecerdasan Buatan (AI) untuk tujuan literasi "
     "dan edukasi hukum, BUKAN nasihat hukum yang mengikat. Untuk sengketa serius, "
-    "hubungi LBH Indonesia (021-315-1405), konsultan hukum profesional, atau "
+    "hubungi LBH Indonesia ((021) 3929840), konsultan hukum profesional, atau "
     "serikat pekerja di organisasi Anda."
 )
 _DISCLAIMER_EN = (
     "This analysis is AI-generated for educational and legal literacy purposes, "
     "NOT binding legal advice. For serious disputes, contact LBH Indonesia "
-    "(021-315-1405), a professional legal consultant, or the labor union in your organization."
+    "((021) 3929840), a professional legal consultant, or the labor union in your organization."
 )
 
 _REVIEW_REASON_ID = (
