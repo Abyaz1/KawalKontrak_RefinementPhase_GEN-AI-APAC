@@ -66,6 +66,10 @@ def locale_instruction(locale: str) -> str:
     """
     if locale == "en":
         return (
+            "\n\nOPERATIONAL PRINCIPLE: Assume the user might only input a partial snippet of the contract. "
+            "You are STRICTLY FORBIDDEN from flagging a missing standard clause (e.g., BPJS, leave) as a red flag "
+            "just because it is not present in the snippet. Only issue a red flag if the text explicitly states "
+            "something illegal."
             "\n\nOUTPUT LANGUAGE: Write ALL user-facing text values "
             "(explanations, danger descriptions, recommendations, analogies, "
             "summaries, next steps, and email templates) in ENGLISH. "
@@ -74,6 +78,9 @@ def locale_instruction(locale: str) -> str:
             "their official Indonesian form."
         )
     return (
+        "\n\nPRINSIP OPERASIONAL: Asumsikan pengguna mungkin hanya memasukkan sebagian/potongan teks kontrak. "
+        "DILARANG KERAS memberikan red flag (indikasi masalah) karena sebuah klausul standar (misal BPJS, cuti) "
+        "tidak tercantum di teks. Hanya berikan red flag jika teks secara eksplisit tertulis melanggar hukum."
         "\n\nBAHASA OUTPUT: Tulis seluruh nilai teks yang dibaca pengguna "
         "dalam BAHASA INDONESIA. Nama field JSON tetap sesuai spesifikasi."
     )
