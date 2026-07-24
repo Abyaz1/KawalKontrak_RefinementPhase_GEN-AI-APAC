@@ -42,7 +42,7 @@ _API_KEY = os.getenv("GEMINI_API_KEY")
 _DEFAULT_PDF = os.path.join(_ROOT, "docs", "UU_Ketenagakerjaan_Embedding.pdf")
 
 
-def upload_to_store(client: genai.Client, pdf_path: str) -> None:
+def upload_to_store(client: genai.Client, path: str) -> None:
     """Mode store: File Search Store persisten (managed RAG)."""
     if not hasattr(client, "file_search_stores"):
         print(
@@ -58,20 +58,36 @@ def upload_to_store(client: genai.Client, pdf_path: str) -> None:
     )
     print(f"    Store dibuat: {store.name}")
 
-    print(f"2/3 Mengunggah & mengindeks {os.path.basename(pdf_path)}...")
-    operation = client.file_search_stores.upload_to_file_search_store(
-        file=pdf_path,
-        file_search_store_name=store.name,
-        config={"display_name": "UU_Ketenagakerjaan_Corpus"},
-    )
+    files_to_upload = []
+    if os.path.isdir(path):
+        files_to_upload = [os.path.join(path, f) for f in os.listdir(path) if f.lower().endswith(".pdf")]
+    else:
+        files_to_upload = [path]
 
-    # Tunggu proses indexing selesai (biasanya < 1 menit untuk 1 PDF)
-    while not operation.done:
-        print("    ... masih mengindeks, tunggu 5 detik")
-        time.sleep(5)
-        operation = client.operations.get(operation)
+    if not files_to_upload:
+        print("ERROR: Tidak ada file PDF yang ditemukan untuk diunggah.", file=sys.stderr)
+        sys.exit(1)
 
-    print("3/3 Indexing selesai!")
+    print(f"2/3 Mengunggah & mengindeks {len(files_to_upload)} file PDF...")
+    
+    for f in files_to_upload:
+        file_name = os.path.basename(f)
+        print(f"    Mengunggah {file_name}...")
+        operation = client.file_search_stores.upload_to_file_search_store(
+            file=f,
+            file_search_store_name=store.name,
+            config={"display_name": file_name},
+        )
+
+        # Tunggu proses indexing selesai
+        while not operation.done:
+            print("    ... masih mengindeks, tunggu 5 detik")
+            time.sleep(5)
+            operation = client.operations.get(operation)
+            
+        print(f"    -> Selesai mengindeks {file_name}")
+
+    print("3/3 Semua indexing selesai!")
     print()
     print("=" * 64)
     print("BERHASIL. Tambahkan baris berikut ke backend_python/.env:")
@@ -82,32 +98,49 @@ def upload_to_store(client: genai.Client, pdf_path: str) -> None:
     print("=" * 64)
 
 
-def upload_as_file(client: genai.Client, pdf_path: str) -> None:
+def upload_as_file(client: genai.Client, path: str) -> None:
     """Mode file: Gemini File API (kedaluwarsa 48 jam — dev only)."""
-    print(f"Mengunggah {os.path.basename(pdf_path)} ke Gemini File API...")
-    uploaded = client.files.upload(
-        file=pdf_path,
-        config={"display_name": "UU_Ketenagakerjaan_Corpus"},
-    )
+    files_to_upload = []
+    if os.path.isdir(path):
+        files_to_upload = [os.path.join(path, f) for f in os.listdir(path) if f.lower().endswith(".pdf")]
+    else:
+        files_to_upload = [path]
+
+    if not files_to_upload:
+        print("ERROR: Tidak ada file PDF yang ditemukan untuk diunggah.", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Mengunggah {len(files_to_upload)} file PDF ke Gemini File API...")
+    
+    uris = []
+    for f in files_to_upload:
+        file_name = os.path.basename(f)
+        print(f"    Mengunggah {file_name}...")
+        uploaded = client.files.upload(
+            file=f,
+            config={"display_name": file_name},
+        )
+        uris.append(uploaded.uri)
+        
     print()
     print("=" * 64)
-    print("BERHASIL. Tambahkan baris berikut ke backend_python/.env:")
-    print()
-    print(f"    GEMINI_CORPUS_FILE_URI={uploaded.uri}")
+    print("BERHASIL. File berhasil diunggah (Mode File API tidak ideal untuk >1 file).")
+    print("URI:")
+    for uri in uris:
+        print(f"    {uri}")
     print()
     print("PERINGATAN: file ini KEDALUWARSA 48 JAM setelah upload.")
-    print("Untuk produksi/demo, pakai mode store (default):")
-    print("    python scripts/upload_corpus.py")
+    print("Disarankan pakai mode store (default) untuk banyak file.")
     print("=" * 64)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Upload corpus regulasi ke Gemini")
     parser.add_argument(
-        "pdf_path",
+        "path",
         nargs="?",
         default=_DEFAULT_PDF,
-        help=f"Path PDF corpus (default: {_DEFAULT_PDF})",
+        help=f"Path PDF atau Folder corpus (default: {_DEFAULT_PDF})",
     )
     parser.add_argument(
         "--mode",
@@ -125,16 +158,16 @@ def main() -> None:
         )
         sys.exit(1)
 
-    if not os.path.isfile(args.pdf_path):
-        print(f"ERROR: File PDF tidak ditemukan: {args.pdf_path}", file=sys.stderr)
+    if not os.path.exists(args.path):
+        print(f"ERROR: Path tidak ditemukan: {args.path}", file=sys.stderr)
         sys.exit(1)
 
     client = genai.Client(api_key=_API_KEY)
 
     if args.mode == "store":
-        upload_to_store(client, args.pdf_path)
+        upload_to_store(client, args.path)
     else:
-        upload_as_file(client, args.pdf_path)
+        upload_as_file(client, args.path)
 
 
 if __name__ == "__main__":
