@@ -166,7 +166,7 @@ export async function POST(req: Request) {
     return jsonError('INVALID_JSON', 'Format request tidak valid.', 400);
   }
 
-  const { contractText, region = '', locale = 'id' } = body as {
+  const { contractText, region = '', locale = 'en' } = body as {
     contractText?: string;
     region?: string;
     locale?: string;

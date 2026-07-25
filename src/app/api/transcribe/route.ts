@@ -50,7 +50,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const { imageBase64, mimeType, locale = 'id' } = body;
+  const { imageBase64, mimeType, locale = 'en' } = body;
 
   if (!imageBase64 || typeof imageBase64 !== 'string') {
     return NextResponse.json(

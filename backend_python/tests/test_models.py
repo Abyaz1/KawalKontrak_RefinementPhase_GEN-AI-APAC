@@ -64,7 +64,7 @@ def test_metadata_new_fields_have_safe_defaults():
     assert md.cached is False
     assert md.verifier_status == "skipped"
     assert md.truncated is False
-    assert md.locale == "id"
+    assert md.locale == "en"
 
 
 def test_analyze_request_enforces_min_length():

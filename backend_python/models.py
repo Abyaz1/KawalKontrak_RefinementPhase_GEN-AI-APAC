@@ -281,7 +281,7 @@ class AnalysisMetadata(BaseModel):
     # True jika teks kontrak melebihi batas dan dipotong sebelum dianalisis
     truncated: bool = False
     # Bahasa output yang diminta
-    locale: str = "id"
+    locale: str = "en"
 
 
 class AnalysisResult(BaseModel):
@@ -319,7 +319,7 @@ class AnalyzeRequest(BaseModel):
         description="Wilayah kerja untuk validasi UMK, contoh: 'Jakarta'"
     )
     locale: str = Field(
-        default="id",
+        default="en",
         description="Bahasa output AI: 'id' (Indonesia) atau 'en' (English)"
     )
 
@@ -335,7 +335,7 @@ class TranscribeRequest(BaseModel):
         description="MIME type gambar: image/jpeg, image/png, atau image/webp"
     )
     locale: str = Field(
-        default="id",
+        default="en",
         description="Bahasa pesan peringatan: 'id' atau 'en'"
     )
 

@@ -50,7 +50,7 @@ Tugas Anda:
 PENTING:
 - Sitasi pasal HANYA dari dokumen regulasi — DILARANG mengarang pasal.
 - Jika tidak yakin, gunakan status TIDAK_DITEMUKAN.
-- 'ketentuan_relevan' harus berupa kutipan singkat dari dokumen regulasi.
+- 'ketentuan_relevan' harus berupa ringkasan/parafrase singkat dari isi pasal tersebut (maksimal 15 kata). DILARANG KERAS menyalin/mengutip teks pasal secara verbatim panjang-panjang agar tidak memicu filter keamanan sistem (recitation/copyright filter).
 """.strip()
 
 # Instruksi format JSON untuk mode file_search (tool tidak bisa digabung
@@ -66,7 +66,7 @@ FORMAT OUTPUT (WAJIB): balas HANYA dengan JSON array valid, tanpa teks lain:
         "peraturan": "<nama peraturan, mis. 'UU No. 6 Tahun 2023'>",
         "pasal": "<nomor pasal, mis. '81'>",
         "judul": "<pokok bahasan pasal>",
-        "ketentuan_relevan": "<kutipan singkat isi pasal>"
+        "ketentuan_relevan": "<ringkasan/parafrase singkat isi pasal, maks 15 kata>"
       }
     ]
   }
@@ -90,7 +90,7 @@ def _build_clauses_prompt(clauses: list[ExtractedClause]) -> str:
 async def match_laws(
     clauses: list[ExtractedClause],
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> list[MatchedClause]:
     """
     Mencocokkan klausul kontrak dengan peraturan perundang-undangan (async).

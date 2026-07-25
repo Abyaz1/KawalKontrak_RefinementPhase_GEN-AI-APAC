@@ -38,11 +38,28 @@ from backend_python.models import (
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+from pydantic import BaseModel
+import json
+
 def _make_client(parsed_value=None, text_value=None):
     """Membuat mock genai.Client yang mengembalikan nilai tertentu dari parsed/text."""
     response = MagicMock()
     response.parsed = parsed_value
-    response.text = text_value
+    
+    if text_value is not None:
+        response.text = text_value
+    elif parsed_value is not None:
+        if isinstance(parsed_value, list):
+            try:
+                response.text = json.dumps([v.model_dump() if isinstance(v, BaseModel) else v for v in parsed_value])
+            except Exception:
+                response.text = str(parsed_value)
+        elif isinstance(parsed_value, BaseModel):
+            response.text = parsed_value.model_dump_json()
+        else:
+            response.text = str(parsed_value)
+    else:
+        response.text = None
 
     aio_mock = AsyncMock()
     aio_mock.models.generate_content = AsyncMock(return_value=response)

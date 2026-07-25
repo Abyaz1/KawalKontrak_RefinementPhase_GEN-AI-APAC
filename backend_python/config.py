@@ -44,7 +44,7 @@ SHARED_SECRET: str | None = os.getenv("BACKEND_SHARED_SECRET") or None
 
 # ── Pemilihan Model (sesuai TRD §3: model termurah sebagai default) ──────────
 
-MODEL_LITE: str = os.getenv("KK_MODEL_LITE", "gemini-2.5-flash-lite")
+MODEL_LITE: str = os.getenv("KK_MODEL_LITE", "gemini-2.5-flash")
 MODEL_CORE: str = os.getenv("KK_MODEL_CORE", "gemini-2.5-flash")
 
 
