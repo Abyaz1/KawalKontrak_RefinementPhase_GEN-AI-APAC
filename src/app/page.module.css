@@ -294,6 +294,388 @@
   }
 }
 
+/* ---- HERO SLIDER ---- */
+.heroSlider {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.heroTrack {
+  display: flex;
+  width: 100%;
+  transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+.heroSlide {
+  flex: 0 0 100%;
+  width: 100%;
+}
+
+/* Solid theme-adaptive background for slides 2-4 (no office photo).
+   Compound selector (.hero.solidSlide) so it beats `.hero { background-image }`
+   and `.hero::before` regardless of source order. */
+.hero.solidSlide {
+  background-image: none;
+  background: var(--color-bg);
+}
+
+.hero.solidSlide::before {
+  display: none;
+}
+
+/* Slider arrows */
+.sliderArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding-bottom: 4px;
+  font-size: 2rem;
+  line-height: 1;
+  color: var(--color-primary);
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+}
+
+.sliderArrow:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.sliderArrowLeft {
+  left: var(--space-lg);
+}
+
+.sliderArrowRight {
+  right: var(--space-lg);
+}
+
+/* Slider dots */
+.sliderDots {
+  position: absolute;
+  bottom: var(--space-2xl);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.sliderDot {
+  width: 11px;
+  height: 11px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--color-gray-300);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.sliderDot:hover {
+  background: var(--color-gray-500);
+}
+
+.sliderDotActive {
+  background: var(--color-primary);
+  transform: scale(1.3);
+}
+
+.sliderDotActive:hover {
+  background: var(--color-primary);
+}
+
+/* ---- SLIDE 2: ZERO COST ---- */
+.freeContent {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.freeZero {
+  font-size: clamp(9rem, 34vw, 22rem);
+  font-weight: 900;
+  line-height: 0.9;
+  letter-spacing: -0.05em;
+  background: linear-gradient(120deg, var(--color-primary) 0%, var(--color-brand-accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  user-select: none;
+}
+
+.freeTitle {
+  font-size: clamp(1.6rem, 3.6vw, 2.6rem);
+  font-weight: 800;
+  color: var(--color-gray-900);
+  letter-spacing: -0.03em;
+  margin: 0 0 var(--space-md);
+}
+
+.freeSubtitle {
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  color: var(--color-gray-500);
+  max-width: 520px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ---- SLIDE 3: RED FLAGS ---- */
+.redFlagsContent {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 1080px;
+  text-align: center;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.redFlagsBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.45rem 1.1rem;
+  background: var(--color-surface-glass);
+  border: 1px solid rgba(220, 38, 38, 0.28);
+  border-radius: var(--radius-full);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #dc2626;
+  margin-bottom: var(--space-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.redFlagsTitle {
+  font-size: clamp(1.9rem, 4.4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--color-gray-900);
+  margin-bottom: var(--space-md);
+  letter-spacing: -0.03em;
+}
+
+.redFlagsTitleAccent {
+  background: linear-gradient(120deg, #dc2626 0%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.redFlagsSubtitle {
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  color: var(--color-gray-500);
+  max-width: 560px;
+  margin: 0 auto var(--space-2xl);
+  line-height: 1.6;
+}
+
+.redFlagsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  text-align: left;
+}
+
+.redFlagCard {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid #dc2626;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.redFlagCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.redFlagIcon {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-gray-800);
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.redFlagIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.redFlagText {
+  min-width: 0;
+}
+
+.redFlagCardTitle {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0 0 0.3rem;
+  letter-spacing: -0.01em;
+}
+
+.redFlagCardDesc {
+  font-size: 0.9rem;
+  color: var(--color-gray-500);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* ---- SLIDE 4: DATA SAFETY ---- */
+.privacyContent {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  max-width: 880px;
+  text-align: center;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.privacyShield {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
+.privacyShield svg {
+  width: clamp(96px, 16vw, 160px);
+  height: auto;
+  filter: drop-shadow(0 10px 26px rgba(31, 58, 147, 0.22));
+}
+
+.privacyTitle {
+  font-size: clamp(1.9rem, 4.4vw, 3rem);
+  font-weight: 800;
+  line-height: 1.12;
+  color: var(--color-gray-900);
+  margin: 0 0 var(--space-md);
+  letter-spacing: -0.03em;
+}
+
+.privacySubtitle {
+  font-size: clamp(1rem, 2vw, 1.18rem);
+  color: var(--color-gray-500);
+  max-width: 560px;
+  margin: 0 auto var(--space-2xl);
+  line-height: 1.6;
+}
+
+.privacyPoints {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+  text-align: left;
+}
+
+.privacyCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.privacyCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.privacyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--color-gray-800);
+  background: var(--color-bg-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.privacyIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.privacyCardTitle {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.privacyCardDesc {
+  font-size: 0.9rem;
+  color: var(--color-gray-500);
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Slider responsive */
+@media (max-width: 768px) {
+  .sliderArrow {
+    width: 40px;
+    height: 40px;
+    font-size: 1.6rem;
+  }
+
+  .sliderArrowLeft {
+    left: var(--space-sm);
+  }
+
+  .sliderArrowRight {
+    right: var(--space-sm);
+  }
+
+  .sliderDots {
+    bottom: var(--space-lg);
+  }
+
+  .redFlagsGrid,
+  .privacyPoints {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .redFlagsContent,
+  .privacyContent {
+    max-height: 78vh;
+    overflow-y: auto;
+  }
+}
+
 /* ---- HERO SECTION ---- */
 .hero {
   position: relative;
@@ -334,6 +716,7 @@
   border-radius: 50%;
   filter: blur(80px);
   opacity: 0.5;
+  will-change: transform;
 }
 
 .heroBlob1 {
@@ -526,12 +909,23 @@
 }
 
 .sectionAlt {
-  background: var(--color-gray-50);
+  background: transparent;
 }
 
+/* Translucent band with feathered top/bottom edges: lets the fixed particle
+   field read continuously through the page instead of covering it with an
+   opaque block. Alternating sections stay "clear" (full particles) vs this
+   faint tinted band for gentle rhythm. */
 .sectionAltWrapper {
   padding: var(--space-4xl) 0;
-  background: var(--color-gray-50);
+  background: var(--color-surface-alt); /* fallback for browsers without color-mix */
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    color-mix(in srgb, var(--color-surface-alt) 82%, transparent) 12%,
+    color-mix(in srgb, var(--color-surface-alt) 82%, transparent) 88%,
+    transparent 100%
+  );
 }
 
 .sectionHeader {
@@ -578,12 +972,34 @@
 .featureCard {
   position: relative;
   padding: var(--space-2xl);
-  background: var(--color-white);
+  background: var(--color-surface);
   border-radius: var(--radius-xl);
-  border: 1px solid var(--color-gray-100);
-  transition: all var(--transition-normal);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+  transition: transform var(--transition-normal),
+              box-shadow var(--transition-normal),
+              border-color var(--transition-normal);
   animation: fadeInUp 0.6s ease-out both;
   cursor: default;
+}
+
+/* Subtle brand-blue accent bar along the top (the "blue" in light mode);
+   brightens on hover. */
+.featureCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-brand-accent));
+  opacity: 0.4;
+  transition: opacity var(--transition-normal);
+}
+
+.featureCard:hover::before {
+  opacity: 1;
 }
 
 .featureCard:nth-child(1) { animation-delay: 0.1s; }
@@ -595,8 +1011,8 @@
 
 .featureCard:hover {
   transform: translateY(-6px);
-  box-shadow: var(--shadow-xl);
-  border-color: rgba(31, 58, 147, 0.1);
+  box-shadow: var(--shadow-brand);
+  border-color: var(--color-brand-subtle);
 }
 
 .featureIcon {
@@ -610,6 +1026,11 @@
   font-weight: 700;
   color: var(--color-gray-800);
   margin-bottom: var(--space-sm);
+  transition: color var(--transition-fast);
+}
+
+.featureCard:hover .featureTitle {
+  color: var(--color-primary);
 }
 
 .featureDescription {
@@ -713,6 +1134,117 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-xl);
+  align-items: start; /* expanding one card must not stretch its neighbours */
+}
+
+/* ---- "Why We Built This" — expandable fact cards ---- */
+.factCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  text-align: left;
+  padding: var(--space-xl);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  font-family: var(--font-primary);
+  transition: transform var(--transition-normal),
+              box-shadow var(--transition-normal),
+              border-color var(--transition-normal);
+  animation: fadeInUp 0.6s ease-out both;
+}
+
+.factCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.factCard:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.factCardOpen {
+  box-shadow: var(--shadow-lg);
+  border-left-color: var(--color-brand-accent);
+}
+
+.factHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.factTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--color-gray-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.factChevron {
+  flex-shrink: 0;
+  color: var(--color-gray-400);
+  font-size: 0.9rem;
+  transition: transform var(--transition-normal), color var(--transition-normal);
+}
+
+.factChevronOpen {
+  transform: rotate(180deg);
+  color: var(--color-primary);
+}
+
+.factDesc {
+  font-size: var(--text-base);
+  color: var(--color-gray-500);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* Detail is mounted only when open (reliable, no cascade dependency). */
+.factDetail {
+  animation: factReveal 0.32s ease-out;
+}
+
+@keyframes factReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.factDetailText {
+  font-size: 0.92rem;
+  color: var(--color-gray-600);
+  line-height: 1.7;
+  margin: var(--space-md) 0;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.factSource {
+  font-size: 0.8rem;
+  color: var(--color-gray-400);
+  line-height: 1.5;
+  margin: 0;
+  font-style: italic;
+}
+
+.factToggleHint {
+  margin-top: var(--space-xs);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--color-primary);
 }
 
 .testimonialCard {

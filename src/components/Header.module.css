@@ -4,16 +4,17 @@
   left: 0;
   right: 0;
   z-index: var(--z-sticky);
-  background: rgba(15, 23, 42, 0.85); /* Always dark glassmorphism */
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  transition: all var(--transition-normal);
+  background: rgba(11, 16, 30, 0.8); /* Always dark glassmorphism */
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: background var(--transition-normal), box-shadow var(--transition-normal), padding var(--transition-normal);
 }
 
 .headerScrolled {
   padding: var(--space-xs) 0;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  background: rgba(11, 16, 30, 0.9);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
 }
 
 .nav {
@@ -82,22 +83,22 @@
 }
 
 .navCta {
-  background: #3b82f6; /* Blue CTA for contrast */
+  background: linear-gradient(135deg, #3b6fe0, #4f46e5); /* Brand gradient CTA */
   color: #fff;
   padding: var(--space-sm) var(--space-lg);
   border-radius: var(--radius-md);
   font-weight: 600;
   font-size: var(--text-sm);
   text-decoration: none;
-  transition: all var(--transition-fast);
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), filter var(--transition-fast);
+  box-shadow: 0 4px 14px rgba(59, 111, 224, 0.35);
   white-space: nowrap;
 }
 
 .navCta:hover {
-  background: #60a5fa;
+  filter: brightness(1.08);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 20px rgba(59, 111, 224, 0.45);
   text-decoration: none;
   color: #fff;
 }

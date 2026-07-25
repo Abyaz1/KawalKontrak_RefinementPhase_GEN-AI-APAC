@@ -11,11 +11,13 @@
    ============================================================ */
 :root {
   /* ── Brand Colors ── */
-  --color-brand:          #1F3A93; /* UI/UX exact match */
-  --color-brand-light:    #3B82F6;
-  --color-brand-dark:     #172554;
-  --color-brand-muted:    rgba(31, 58, 147, 0.08);
-  --color-brand-glow:     rgba(31, 58, 147, 0.25);
+  --color-brand:          #1E3A8C; /* refined royal indigo - trustworthy, premium */
+  --color-brand-light:    #3B6FE0;
+  --color-brand-dark:     #14265E;
+  --color-brand-accent:   #4F46E5; /* indigo accent for gradients/highlights */
+  --color-brand-muted:    rgba(30, 58, 140, 0.07);
+  --color-brand-subtle:   rgba(30, 58, 140, 0.12);
+  --color-brand-glow:     rgba(30, 58, 140, 0.18);
 
   /* ── Semantic / Status Colors ── */
   --color-success:        #10B981; /* UI/UX exact match */
@@ -46,18 +48,21 @@
   --color-risk-low-bg:      rgba(16, 185, 129, 0.08);
 
   /* ── Neutrals ── */
-  --color-dark:           #0F172A;
+  --color-dark:           #0B1220; /* near-black slate for crisp headings */
   --color-dark-2:         #1E293B;
   --color-dark-3:         #334155;
   --color-neutral:        #334155; /* Slate-700 for highly readable body text */
-  --color-neutral-light:  #475569; /* Slate-600 for secondary text */
-  --color-border:         #CBD5E1; /* Slate-300 for clearer borders */
-  --color-border-light:   #E2E8F0;
+  --color-neutral-light:  #64748B; /* Slate-500 for secondary text */
+  --color-border:         #E4E9F0; /* hairline border - softer, premium */
+  --color-border-light:   #EEF2F7;
+  --color-border-strong:  #D3DBE6;
   --color-surface:        #FFFFFF;
   --color-surface-raised: #FFFFFF;
-  --color-surface-glass:  rgba(255, 255, 255, 0.85);
-  --color-bg:             #F8FAFC;
-  --color-bg-alt:         #F1F5F9;
+  --color-surface-alt:    #F6F8FB;
+  --color-surface-glass:  rgba(255, 255, 255, 0.72);
+  --color-surface-translucent: rgba(255, 255, 255, 0.88);
+  --color-bg:             #F7F9FC; /* cleaner, cooler canvas */
+  --color-bg-alt:         #EEF2F8;
   --color-white:          #FFFFFF;
 
   /* ── Typography ── */
@@ -110,22 +115,24 @@
   --space-16:   80px;
 
   /* ── Border Radius ── */
-  --radius-sm:   4px;
-  --radius-md:   8px;
-  --radius-lg:   12px;
-  --radius-xl:   16px;
+  --radius-sm:   6px;
+  --radius-md:   10px;
+  --radius-lg:   14px;
+  --radius-xl:   18px;
+  --radius-2xl:  24px;
   --radius-full: 9999px;
 
-  /* ── Shadows ── */
-  --shadow-xs:  0 1px 2px  rgba(15, 23, 42, 0.04);
-  --shadow-sm:  0 1px 3px  rgba(15, 23, 42, 0.06),
-                0 1px 2px  rgba(15, 23, 42, 0.04);
-  --shadow-md:  0 4px 6px  -1px rgba(15, 23, 42, 0.07),
-                0 2px 4px  -2px rgba(15, 23, 42, 0.05);
-  --shadow-lg:  0 10px 15px -3px rgba(15, 23, 42, 0.08),
-                0 4px 6px  -4px rgba(15, 23, 42, 0.05);
-  --shadow-xl:  0 20px 25px -5px rgba(15, 23, 42, 0.10),
-                0 8px 10px -6px rgba(15, 23, 42, 0.06);
+  /* ── Shadows (soft, layered, subtly brand-tinted for a premium feel) ── */
+  --shadow-xs:  0 1px 2px  rgba(16, 24, 40, 0.04);
+  --shadow-sm:  0 1px 2px  rgba(16, 24, 40, 0.04),
+                0 2px 6px  rgba(16, 24, 40, 0.05);
+  --shadow-md:  0 2px 4px  -1px rgba(16, 24, 40, 0.05),
+                0 8px 18px -4px rgba(16, 24, 40, 0.08);
+  --shadow-lg:  0 4px 8px  -2px rgba(16, 24, 40, 0.05),
+                0 16px 32px -8px rgba(16, 24, 40, 0.11);
+  --shadow-xl:  0 8px 16px -4px rgba(16, 24, 40, 0.06),
+                0 28px 56px -12px rgba(16, 24, 40, 0.16);
+  --shadow-brand: 0 8px 24px -6px rgba(30, 58, 140, 0.28);
 
   /* ── Transitions ── */
   --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
@@ -148,22 +155,32 @@
    2. DARK MODE TOKENS
    ============================================================ */
 [data-theme='dark'] {
-  --color-dark:           #F8FAFC;
-  --color-dark-2:         #F1F5F9;
-  --color-dark-3:         #E2E8F0;
-  --color-neutral:        #E2E8F0; /* Slate-200 for readable text on dark bg */
-  --color-neutral-light:  #94A3B8; /* Slate-400 for secondary text */
-  --color-border:         #475569; /* Slate-600 for clearer borders */
-  --color-border-light:   #334155;
-  --color-surface:        #1E293B;
-  --color-surface-raised: #2D3748;
-  --color-surface-glass:  rgba(30, 41, 59, 0.85);
-  --color-bg:             #0F172A;
-  --color-bg-alt:         #1E293B;
-  --color-white:          #0F172A;
+  --color-brand:          #6E8DF0; /* brighter indigo for contrast on dark */
+  --color-brand-light:    #8AA5F5;
+  --color-brand-dark:     #3B6FE0;
+  --color-brand-accent:   #818CF8;
 
-  --color-brand-muted:  rgba(59, 130, 246, 0.20);
-  --color-brand-glow:   rgba(59, 130, 246, 0.40);
+  --color-dark:           #F8FAFC;
+  --color-dark-2:         #E2E8F0;
+  --color-dark-3:         #CBD5E1;
+  --color-neutral:        #CBD5E1; /* Slate-300 for readable text on dark bg */
+  --color-neutral-light:  #94A3B8; /* Slate-400 for secondary text */
+  --color-border:         #29344A; /* subtle hairline on dark */
+  --color-border-light:   #202B3F;
+  --color-border-strong:  #3A4763;
+  --color-surface:        #141C2E;
+  --color-surface-raised: #1B2436;
+  --color-surface-alt:    #1A2333;
+  --color-surface-glass:  rgba(17, 24, 39, 0.72);
+  --color-surface-translucent: rgba(20, 28, 46, 0.88);
+  --color-bg:             #0A0F1C;
+  --color-bg-alt:         #131C2E;
+  --color-white:          #0A0F1C;
+
+  --color-brand-muted:  rgba(110, 141, 240, 0.14);
+  --color-brand-subtle: rgba(110, 141, 240, 0.22);
+  --color-brand-glow:   rgba(110, 141, 240, 0.35);
+  --shadow-brand: 0 8px 24px -6px rgba(0, 0, 0, 0.5);
 
   --color-success:        #34D399; /* Lighter emerald for dark theme */
   --color-warning:        #FBBF24; /* Lighter amber for dark theme */
@@ -218,6 +235,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: 'cv11', 'ss01';
+  font-variant-numeric: tabular-nums;
 }
 
 img,
@@ -260,6 +279,8 @@ h1, h2, h3, h4, h5, h6 {
   line-height: var(--leading-tight);
   font-weight: var(--weight-bold);
   color: var(--color-dark);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 p {
@@ -276,7 +297,17 @@ p {
 :focus-visible {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
+
+/* ============================================================
+   3b. DYNAMIC BACKGROUND
+   Efek partikel melayang ditangani oleh komponen canvas
+   <ParticlesBackground /> (src/components/ParticlesBackground.tsx),
+   di-mount global di layout. Canvas fixed di z-index -1 (di belakang
+   seluruh konten). Warna partikel mengikuti tema dan berhenti otomatis
+   saat prefers-reduced-motion aktif.
+   ============================================================ */
 
 /* ============================================================
    4. LAYOUT UTILITIES
@@ -337,15 +368,15 @@ p {
 
 /* ── Glassmorphism ── */
 .glass {
-  background: rgba(255, 255, 255, 0.60);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--color-surface-glass);
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 [data-theme='dark'] .glass {
-  background: rgba(30, 41, 59, 0.65);
-  border-color: rgba(148, 163, 184, 0.12);
+  background: var(--color-surface-glass);
+  border-color: rgba(148, 163, 184, 0.10);
 }
 
 /* ============================================================
@@ -353,21 +384,55 @@ p {
    ============================================================ */
 .card {
   background: var(--color-surface);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border);
   box-shadow: var(--shadow-sm);
   padding: var(--space-lg);
   transition: box-shadow var(--transition-normal),
-              transform var(--transition-normal);
+              transform var(--transition-normal),
+              border-color var(--transition-normal);
 }
 
 .card:hover {
   box-shadow: var(--shadow-md);
+  border-color: var(--color-border-strong);
 }
 
 .card-interactive:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--shadow-lg);
+}
+
+/* Content panel - solid box for text blocks, readable over the particle
+   background. Used by legal pages, 404, etc. */
+.content-panel {
+  position: relative;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  padding: clamp(28px, 5vw, 52px);
+  overflow: hidden;
+}
+
+/* Thin gradient accent along the top of the panel, matching feature cards */
+.content-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-accent));
+}
+
+/* Frosted glass panel - lets a hint of the particles show through
+   while staying readable. */
+.glass-panel {
+  background: var(--color-surface-translucent);
+  backdrop-filter: blur(12px) saturate(140%);
+  -webkit-backdrop-filter: blur(12px) saturate(140%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
 }
 
 /* ============================================================
@@ -451,12 +516,14 @@ p {
   background-color: var(--color-brand);
   color: #FFFFFF;
   border-color: var(--color-brand);
+  box-shadow: var(--shadow-xs);
 }
 
 .btn-primary:hover {
   background-color: var(--color-brand-dark);
   border-color: var(--color-brand-dark);
-  box-shadow: 0 0 0 3px var(--color-brand-glow);
+  box-shadow: var(--shadow-brand);
+  transform: translateY(-1px);
   text-decoration: none;
 }
 

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { Providers } from "./providers";
+import { ParticlesBackground } from "@/components/ParticlesBackground";
 import "./globals.css";
 
 const inter = Inter({
@@ -131,6 +132,7 @@ export default function RootLayout({
         />
       </head>
       <body suppressHydrationWarning>
+        <ParticlesBackground />
         <a href="#main-content" className="sr-only">
           Langsung ke konten utama
         </a>
