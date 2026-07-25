@@ -410,15 +410,58 @@
 }
 
 .freeZero {
-  font-size: clamp(9rem, 34vw, 22rem);
+  position: relative;
+  display: inline-block;
+  font-size: clamp(3rem, 11vw, 8.5rem);
   font-weight: 900;
-  line-height: 0.9;
-  letter-spacing: -0.05em;
+  line-height: 1;
+  letter-spacing: -0.02em;
   background: linear-gradient(120deg, var(--color-primary) 0%, var(--color-brand-accent) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
   user-select: none;
+}
+
+/* Periodic shine: a soft white band sweeps across the glyphs, then rests.
+   Drawn as a duplicate text layer so the brand gradient underneath is
+   never replaced, only briefly lit. */
+.freeZero::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 42%,
+    rgba(255, 255, 255, 0.9) 50%,
+    transparent 58%
+  );
+  background-size: 260% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  pointer-events: none;
+  animation: freeShine 3.2s ease-in-out infinite;
+}
+
+@keyframes freeShine {
+  0% {
+    background-position: 190% 0;
+  }
+  32% {
+    background-position: -90% 0;
+  }
+  100% {
+    background-position: -90% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .freeZero::after {
+    animation: none;
+  }
 }
 
 .freeTitle {

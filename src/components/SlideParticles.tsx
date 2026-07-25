@@ -71,6 +71,9 @@ export function SlideParticles({ className, paused = false }: { className?: stri
     }
 
     function resize() {
+      // Skip while the slide has no size yet; the ResizeObserver re-runs this
+      // once layout settles, so the canvas is never left blank at 0x0.
+      if (parent.clientWidth === 0 || parent.clientHeight === 0) return;
       width = parent.clientWidth;
       height = parent.clientHeight;
       canvas.width = Math.floor(width * dpr);
@@ -79,6 +82,10 @@ export function SlideParticles({ className, paused = false }: { className?: stri
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       build();
+      // Paint immediately so the slide never shows an empty canvas, even while
+      // paused (off-screen or mid-transition). Resizing clears the bitmap, so
+      // this has to run after every resize as well.
+      render();
     }
 
     function render() {
@@ -132,8 +139,9 @@ export function SlideParticles({ className, paused = false }: { className?: stri
 
     function start() {
       cancelAnimationFrame(rafId);
-      if (reduced) render();
-      else rafId = requestAnimationFrame(loop);
+      // Always show a first frame right away, then animate if motion is allowed.
+      render();
+      if (!reduced) rafId = requestAnimationFrame(loop);
     }
 
     function stop() {
@@ -152,7 +160,8 @@ export function SlideParticles({ className, paused = false }: { className?: stri
 
     const themeObserver = new MutationObserver(() => {
       color = themeColor();
-      if (reduced) render();
+      // Repaint even while paused so a theme toggle is reflected immediately.
+      render();
     });
     themeObserver.observe(document.documentElement, {
       attributes: true,

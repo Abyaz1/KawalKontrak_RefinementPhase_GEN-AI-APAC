@@ -365,7 +365,7 @@ export default function HomePage() {
           <section className={`${styles.hero} ${styles.heroSlide} ${styles.solidSlide}`}>
             <SlideParticles paused={isSliding || currentSlide !== 1} />
             <div className={styles.freeContent}>
-              <div className={styles.freeZero}>0</div>
+              <div className={styles.freeZero} data-text="Rp.0,-">Rp.0,-</div>
               <h2 className={styles.freeTitle}>{sliderCopy.free.title[locale]}</h2>
               <p className={styles.freeSubtitle}>
                 {sliderCopy.free.subtitle[locale]}

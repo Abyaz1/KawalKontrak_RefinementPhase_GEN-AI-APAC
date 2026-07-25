@@ -122,14 +122,23 @@ export function ParticlesBackground() {
     }
 
     function resize() {
-      width = window.innerWidth;
-      height = window.innerHeight;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      // Bail out while the viewport reports 0 (hidden tab, ancestor still
+      // laying out). Otherwise the canvas would be sized 0x0 and stay blank
+      // until the next window resize. The ResizeObserver below re-runs this
+      // as soon as a real size is available.
+      if (w === 0 || h === 0) return;
+      width = w;
+      height = h;
       canvas.width = Math.floor(width * dpr);
       canvas.height = Math.floor(height * dpr);
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       build();
+      // Paint at once so particles are on screen the moment layout settles.
+      render();
     }
 
     /** Menggambar satu ikon neraca (line-art) berpusat di (cx, cy). */
@@ -269,12 +278,19 @@ export function ParticlesBackground() {
     resize();
     start();
 
+    // Covers the case where the viewport is still 0 at mount (hidden tab,
+    // deferred layout): fires as soon as a real size exists, unlike the
+    // window 'resize' event which may never come.
+    const viewportObserver = new ResizeObserver(resize);
+    viewportObserver.observe(document.documentElement);
+
     window.addEventListener('resize', resize);
     document.addEventListener('visibilitychange', onVisibility);
     prefersReduced.addEventListener('change', onReducedChange);
 
     return () => {
       stop();
+      viewportObserver.disconnect();
       window.removeEventListener('resize', resize);
       document.removeEventListener('visibilitychange', onVisibility);
       prefersReduced.removeEventListener('change', onReducedChange);

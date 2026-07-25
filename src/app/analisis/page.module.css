@@ -29,7 +29,10 @@
 
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   color: var(--kk-text);
-  background: var(--kk-bg);
+  /* Transparent so the global <ParticlesBackground /> canvas (fixed, z-index -1,
+     mounted in layout.tsx) stays visible on this page too. The panels below
+     are translucent for the same reason. */
+  background: transparent;
   min-height: 100vh;
 }
 
@@ -110,7 +113,8 @@
 /* ---------- input panel ---------- */
 .inputPanel {
   padding: 40px 36px;
-  background: var(--kk-bg);
+  background: var(--kk-bg); /* fallback */
+  background: color-mix(in srgb, var(--kk-bg) 80%, transparent);
   overflow-y: auto;
   border-right: 1px solid var(--kk-border);
 }
@@ -383,7 +387,8 @@
 /* ---------- results panel ---------- */
 .resultsPanel {
   padding: 40px 36px;
-  background: var(--kk-surface);
+  background: var(--kk-surface); /* fallback */
+  background: color-mix(in srgb, var(--kk-surface) 88%, transparent);
   overflow-y: auto;
   position: relative;
 }

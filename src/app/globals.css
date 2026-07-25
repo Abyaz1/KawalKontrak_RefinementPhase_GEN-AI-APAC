@@ -846,6 +846,11 @@ p {
     color: #000;
   }
 
+  /* Decorative particle canvases must never appear in the exported PDF. */
+  canvas[aria-hidden='true'] {
+    display: none !important;
+  }
+
   .glass {
     background: #fff;
     backdrop-filter: none;
