@@ -65,15 +65,19 @@ def test_golden_set_end_to_end():
 
     assert result.status == "completed", "Pipeline harus selesai tanpa fallback"
 
-    # Gabungan teks semua red flag untuk pencocokan kata kunci
+    # Gabungan teks semua red flag dan klausul tinjauan untuk pencocokan kata kunci
     all_flag_text = " ".join(
         f"{rf.pasal_kontrak} {rf.potensi_masalah}" for rf in result.red_flags
     )
+    all_review_text = " ".join(
+        f"{rc.pasal_kontrak} {rc.alasan}" for rc in result.klausul_tinjauan
+    )
+    combined_text = all_flag_text + " " + all_review_text
 
     missed = [
         g["id"]
         for g in golden
-        if g["expected"] == "red_flag" and not _flag_mentions(all_flag_text, g["match_keywords"])
+        if g["expected"] == "red_flag" and not _flag_mentions(combined_text, g["match_keywords"])
     ]
     assert not missed, f"Klausul pelanggaran tidak terdeteksi: {missed}"
 

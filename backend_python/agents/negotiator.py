@@ -53,7 +53,7 @@ Panjang: 100-180 kata per email.
 async def generate_negotiations(
     flags: list[RedFlagDraft],
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> dict[str, str]:
     """
     Menghasilkan template email negosiasi untuk setiap red flag (async).

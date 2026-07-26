@@ -54,12 +54,14 @@ Tandai is_valid = False jika:
 - Klausul kontrak sebenarnya tidak melanggar hukum (false positive).
 
 Sertakan 'reason' yang jelas jika is_valid = False.
+PENTING:
+Jangan mengutip teks pasal secara verbatim panjang-panjang pada alasan ('reason') Anda; gunakan penjelasan/parafrase singkat agar tidak memicu filter keamanan sistem (recitation/copyright filter).
 """.strip()
 
 _JSON_FORMAT_INSTRUCTION = """
-FORMAT OUTPUT (WAJIB): balas HANYA dengan JSON array valid, tanpa teks lain:
+FORMAT OUTPUT (WAJIB): balas HANYA dengan satu JSON array valid, tanpa teks lain (JANGAN ada penjelasan, kutipan, markdown, atau pengulangan format):
 [
-  {"flag_id": "<id>", "is_valid": true | false, "reason": "<alasan jika tidak valid, boleh null>"}
+  {"flag_id": "<id>", "is_valid": true | false, "reason": "<alasan singkat jika tidak valid, boleh null>"}
 ]
 """.strip()
 
@@ -69,7 +71,7 @@ _VERIFICATION_LIST_ADAPTER = TypeAdapter(list[VerificationResult])
 async def verify_red_flags(
     red_flags: list[RedFlagDraft],
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> tuple[list[RedFlagDraft], str]:
     """
     Memverifikasi validitas setiap red flag untuk mencegah halusinasi (async).

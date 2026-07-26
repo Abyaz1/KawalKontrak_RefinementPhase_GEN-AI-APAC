@@ -147,7 +147,7 @@ def _build_fallback_result(contract_text: str, locale: str) -> AnalysisResult:
 async def run_analysis_pipeline_stream(
     contract_text: str,
     api_key: str,
-    locale: str = "id",
+    locale: str = "en",
 ) -> AsyncIterator[dict[str, Any]]:
     """
     Menjalankan pipeline analisis sebagai async generator.
@@ -319,7 +319,7 @@ async def run_analysis_pipeline_stream(
 async def run_analysis_pipeline(
     contract_text: str,
     api_key: str,
-    locale: str = "id",
+    locale: str = "en",
 ) -> AnalysisResult:
     """
     Wrapper non-streaming: menjalankan pipeline dan mengembalikan hanya

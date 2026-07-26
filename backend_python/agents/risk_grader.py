@@ -57,7 +57,7 @@ Prinsip penulisan:
 async def grade_risks(
     matched_clauses: list[MatchedClause],
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> RiskGraderOutput | None:
     """
     Menilai risiko seluruh klausul dan menyusun laporan analisis lengkap (async).

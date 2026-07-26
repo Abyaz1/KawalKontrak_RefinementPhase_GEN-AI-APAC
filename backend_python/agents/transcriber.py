@@ -48,7 +48,7 @@ async def transcribe_contract_image(
     image_bytes: bytes,
     mime_type: str,
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> tuple[str, str | None]:
     """
     Mentranskripsi gambar kontrak menjadi teks (async).

@@ -48,7 +48,7 @@ Panduan:
 async def extract_clauses(
     contract_text: str,
     client: genai.Client,
-    locale: str = "id",
+    locale: str = "en",
 ) -> list[ExtractedClause]:
     """
     Mengekstrak semua klausul dari teks kontrak kerja (async).
