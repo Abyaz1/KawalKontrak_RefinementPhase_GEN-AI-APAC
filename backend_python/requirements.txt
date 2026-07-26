@@ -6,22 +6,28 @@
 #   pip install -r backend_python/requirements.txt
 #
 # Versi Python yang direkomendasikan: 3.11 – 3.13
+#
+# Versi di-pin persis (==) agar image Docker reproducible: build hari
+# ini dan build bulan depan menghasilkan environment yang sama. Ini
+# penting karena perilaku File Search (managed RAG) terikat pada versi
+# google-genai. Naikkan versi secara sadar, lalu jalankan:
+#   pytest backend_python/tests -v
 # =============================================================
 
 # --- Web Framework ---
-fastapi>=0.115,<1.0        # Framework API modern, async, berbasis Pydantic
-uvicorn[standard]>=0.32    # ASGI server untuk menjalankan FastAPI
+fastapi==0.139.2           # Framework API modern, async, berbasis Pydantic
+uvicorn[standard]==0.51.0  # ASGI server untuk menjalankan FastAPI
 
 # --- Google Gemini AI SDK ---
 # Minimal 1.30 agar mendukung File Search Store (managed RAG persisten).
 # Jika versi lama terpasang, backend otomatis fallback ke mode file_data.
-google-genai>=1.30
+google-genai==2.13.0
 
 # --- Data Validation ---
-pydantic>=2.9,<3.0         # Validasi & serialisasi (Structured Output Gemini)
+pydantic==2.13.4           # Validasi & serialisasi (Structured Output Gemini)
 
 # --- Environment Management ---
-python-dotenv>=1.0         # Membaca variabel dari file .env
+python-dotenv==1.2.2       # Membaca variabel dari file .env
 
 # --- HTTP Client (dipakai google-genai & testing) ---
-httpx>=0.28
+httpx==0.28.1

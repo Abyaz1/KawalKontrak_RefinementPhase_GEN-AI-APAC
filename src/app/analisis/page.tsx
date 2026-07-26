@@ -1171,10 +1171,18 @@ export default function AnalisisPage() {
           {/* Demo mode (FR-14) */}
           <div className={s.demoRow}>
             <span className={s.demoLabel}>{t.analysis_demo_label}</span>
-            <button type="button" className={s.demoBtn} onClick={() => loadDemoContract('risky')}>
+            <button
+              type="button"
+              className={`${s.demoBtn} ${s.demoBtnRisky}`}
+              onClick={() => loadDemoContract('risky')}
+            >
               {t.analysis_demo_risky}
             </button>
-            <button type="button" className={s.demoBtn} onClick={() => loadDemoContract('fair')}>
+            <button
+              type="button"
+              className={`${s.demoBtn} ${s.demoBtnFair}`}
+              onClick={() => loadDemoContract('fair')}
+            >
               {t.analysis_demo_safe}
             </button>
           </div>

@@ -1,0 +1,65 @@
+# =============================================================
+# KawalKontrak.ai — Pengecualian build context Docker
+#
+# Berlaku untuk Dockerfile.frontend DAN Dockerfile.backend, karena
+# keduanya memakai context '.' (lihat docker-compose.yml).
+#
+# PENTING: Docker tidak membaca .gitignore. Tanpa file ini:
+#   1. `COPY . .` menimpa node_modules hasil `npm ci` di dalam image
+#      dengan node_modules host. Di host Windows itu berisi
+#      @next/swc-win32-x64-msvc, sehingga `next build` gagal mencari
+#      binary linux-musl.
+#   2. backend_python/.env (berisi GEMINI_API_KEY) ikut ter-bake ke
+#      layer image dan bisa dibaca siapa pun yang bisa pull image.
+# =============================================================
+
+# ── Dependency & artefak build (dibangun ulang di dalam image) ──
+**/node_modules
+.next
+out
+build
+*.tsbuildinfo
+
+# ── Rahasia: jangan pernah masuk ke layer image ──
+.env
+.env.*
+**/.env
+**/.env.*
+
+# ── Git & metadata repo ──
+.git
+.gitignore
+.github
+
+# ── Corpus regulasi (16 MB) ──
+# Hanya dipakai scripts/upload_corpus.py yang dijalankan di lokal.
+# Tidak dibutuhkan container manapun saat runtime.
+Law_file
+
+# ── Python ──
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.venv
+venv
+backend_python/tests
+backend_python/requirements-dev.txt
+
+# ── Skrip operasional (dijalankan di lokal, bukan di container) ──
+scripts
+
+# ── Tooling, dokumentasi, dan konfigurasi deploy ──
+.claude
+.vscode
+.idea
+README.md
+CLAUDE.md
+docker-compose.yml
+Dockerfile.*
+firestore.rules
+
+# ── OS & log ──
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
