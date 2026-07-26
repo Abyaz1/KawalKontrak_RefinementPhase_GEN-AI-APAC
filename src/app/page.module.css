@@ -378,8 +378,8 @@
 }
 
 .sliderDot {
-  width: 11px;
-  height: 11px;
+  width: 8px;
+  height: 8px;
   padding: 0;
   border: none;
   border-radius: 50%;
@@ -412,7 +412,7 @@
 .freeZero {
   position: relative;
   display: inline-block;
-  font-size: clamp(3rem, 11vw, 8.5rem);
+  font-size: clamp(3.8rem, 13.5vw, 10.5rem);
   font-weight: 900;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -469,7 +469,8 @@
   font-weight: 800;
   color: var(--color-gray-900);
   letter-spacing: -0.03em;
-  margin: 0 0 var(--space-md);
+  /* Jarak atas memberi ruang bernapas dari angka Rp.0,- yang besar */
+  margin: var(--space-xl) 0 var(--space-md);
 }
 
 .freeSubtitle {
