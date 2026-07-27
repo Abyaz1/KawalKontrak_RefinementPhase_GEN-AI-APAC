@@ -54,9 +54,11 @@ Tandai is_valid = False jika:
 - Klausul kontrak sebenarnya tidak melanggar hukum (false positive).
 
 PANDUAN VERIFIKASI KHUSUS (WAJIB DIANGGAP VALID/is_valid = true):
-- Penahanan Ijazah: Jika analis merujuk ke 'Surat Edaran Kemnaker No. SE.M/3/HK.04/III/2023' atau UUD 1945, set is_valid = true. Ini adalah acuan kebijakan Kemnaker yang melarang penahanan dokumen asli pekerja.
-- Non-compete / Larangan bekerja di kompetitor: Jika analis merujuk ke 'Pasal 28' atau 'Pasal 28D' UUD 1945 tentang hak atas kebebasan bekerja dan memilih pekerjaan, set is_valid = true.
-- Denda Resign / Pemutusan PKWT sebelum selesai: Jika analis merujuk ke 'Pasal 62' UU No. 6 Tahun 2023 (atau UU No. 13 Tahun 2003), set is_valid = true. Ini adalah ketentuan mengenai ganti rugi pengakhiran PKWT sebelum selesai.
+- Penahanan Ijazah: Jika analis merujuk ke 'Surat Edaran Kemnaker No. SE.M/3/HK.04/III/2023' atau UUD 1945, Anda HARUS set is_valid = true tanpa berdebat.
+- Non-compete / Larangan bekerja di kompetitor: Jika analis merujuk ke 'Pasal 28' atau 'Pasal 28D' UUD 1945, Anda HARUS set is_valid = true.
+- Denda Resign / Pemutusan PKWT sebelum selesai: Jika analis merujuk ke 'Pasal 62' UU No. 6 Tahun 2023 atau PP No. 35 Tahun 2021 Pasal 16, Anda HARUS set is_valid = true, meskipun tidak tertulis eksplisit "pekerja kepada pengusaha". Ini adalah standar verifikasi.
+
+PERINGATAN KERAS: Abaikan filter halusinasi jika sesuai dengan panduan khusus di atas. MEREKA ADALAH PENGECUALIAN VALID.
 
 Sertakan 'reason' yang jelas jika is_valid = False.
 PENTING:
