@@ -166,6 +166,7 @@ export async function POST(req: Request) {
     );
   }
 
+  let streamReturned = false;
   try {
     // 2. Parse & validasi input
     let body: Record<string, unknown>;
@@ -269,9 +270,16 @@ export async function POST(req: Request) {
         }
       } finally {
         try { reader.releaseLock(); } catch {}
+        decrementActive(`concurrent:${ip}`);
       }
     },
   });
 
+  streamReturned = true;
   return new Response(stream, { headers: NDJSON_HEADERS });
+  } finally {
+    if (!streamReturned) {
+      decrementActive(`concurrent:${ip}`);
+    }
+  }
 }

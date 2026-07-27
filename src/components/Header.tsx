@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
@@ -45,7 +46,7 @@ export function Header() {
       <nav className={s.nav}>
         <div className={s.navLeft}>
           <Link href="/" className={s.logo} onClick={closeMobile}>
-            <img src="/logo.png" alt="KawalKontrak Logo" className={s.logoImg} />
+            <Image src="/logo.png" alt="KawalKontrak Logo" width={32} height={32} className={s.logoImg} />
             <span>KawalKontrak<span style={{ color: 'var(--color-brand-light)' }}>.ai</span></span>
           </Link>
 
@@ -123,7 +124,7 @@ export function Header() {
                   type="button"
                 >
                   {user.photoURL ? (
-                    <img src={user.photoURL} alt={user.displayName || 'User'} className={s.avatarImg} />
+                    <Image src={user.photoURL} alt={user.displayName || 'User'} width={32} height={32} className={s.avatarImg} />
                   ) : (
                     <span className={s.avatarText}>{(user.displayName || user.email || '?')[0].toUpperCase()}</span>
                   )}
@@ -211,7 +212,7 @@ export function Header() {
             <div className={s.mobileUser}>
               <div className={s.mobileUserDetails}>
                 {user.photoURL ? (
-                  <img src={user.photoURL} alt={user.displayName || ''} className={s.mobileAvatar} />
+                  <Image src={user.photoURL} alt={user.displayName || ''} width={32} height={32} className={s.mobileAvatar} />
                 ) : (
                   <div className={s.mobileAvatar} style={{ background: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 'bold' }}>
                     {(user.displayName || user.email || '?')[0].toUpperCase()}

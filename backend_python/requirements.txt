@@ -33,9 +33,7 @@ python-dotenv==1.2.2       # Membaca variabel dari file .env
 httpx==0.28.1
 tenacity==8.3.0            # Exponential backoff/retry untuk pemanggilan API
 
-# --- Testing ---
-pytest==8.3.4
-pytest-asyncio==0.23.5
+
 
 # --- Framework ---
 google-adk==2.5.0

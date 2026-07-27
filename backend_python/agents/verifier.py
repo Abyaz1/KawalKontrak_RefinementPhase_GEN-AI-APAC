@@ -100,7 +100,7 @@ async def verify_red_flags(
     """
     if not red_flags:
         logger.info("Verifier: Tidak ada red flag untuk diverifikasi.")
-        return [], "passed"
+        return [], [], "passed"
 
     mode = corpus_mode()
     logger.info(f"Verifier: Mengaudit {len(red_flags)} red flags (corpus mode: {mode})...")

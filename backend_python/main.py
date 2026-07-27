@@ -32,6 +32,8 @@ import base64
 import binascii
 import json
 import logging
+import os
+import psutil
 import sys
 from contextlib import asynccontextmanager
 from typing import Any
@@ -58,7 +60,6 @@ from backend_python.orchestrator import (
 # ADK menyediakan endpoint standar /run, /run_sse, dsb. untuk agent kawal_kontrak.
 # Sub-app ini di-mount ke /adk sehingga tidak konflik dengan endpoint custom.
 try:
-    import os as _os
     from pathlib import Path as _Path
     from google.adk.cli.fast_api import get_fast_api_app as _get_adk_app
 
@@ -73,8 +74,7 @@ try:
 except Exception as _adk_err:
     _ADK_AVAILABLE = False
     _adk_app = None
-    import logging as _logging
-    _logging.getLogger(__name__).warning(
+    logging.getLogger(__name__).warning(
         f"Google ADK sub-app tidak bisa dimuat: {_adk_err}. "
         "Endpoint /adk/* tidak tersedia."
     )
@@ -118,8 +118,6 @@ async def lifespan(app: FastAPI):
     logger.info("KawalKontrak.ai Python Backend — Shutting down")
 
 
-import os
-import psutil
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 
@@ -252,9 +250,10 @@ async def analyze_contract(request: AnalyzeRequest) -> AnalysisResult:
         f"region='{request.region}', locale='{request.locale}'"
     )
 
+    assert config.GEMINI_API_KEY is not None, "GEMINI_API_KEY is required"
     result = await run_analysis_pipeline(
         contract_text=request.contractText,
-        api_key=config.GEMINI_API_KEY,  # type: ignore[arg-type]
+        api_key=config.GEMINI_API_KEY,
         locale=request.locale,
     )
 
@@ -289,9 +288,10 @@ async def analyze_contract_stream(request: AnalyzeRequest) -> StreamingResponse:
     )
 
     async def event_generator():
+        assert config.GEMINI_API_KEY is not None, "GEMINI_API_KEY is required"
         async for event in run_analysis_pipeline_stream(
             contract_text=request.contractText,
-            api_key=config.GEMINI_API_KEY,  # type: ignore[arg-type]
+            api_key=config.GEMINI_API_KEY,
             locale=request.locale,
         ):
             yield json.dumps(event, ensure_ascii=False) + "\n"

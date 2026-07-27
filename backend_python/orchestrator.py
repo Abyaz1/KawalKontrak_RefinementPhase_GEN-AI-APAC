@@ -254,7 +254,8 @@ async def run_analysis_pipeline_stream(
                 ReviewClause(
                     pasal_kontrak=rejected.pasal_kontrak,
                     topik=rejected.potensi_masalah,
-                    alasan="Diturunkan dari Red Flag karena bukti regulasi kurang kuat menurut Verifier AI.",
+                    alasan="Diturunkan dari Red Flag karena bukti regulasi kurang kuat menurut Verifier AI." if locale == "id" else "Downgraded from Red Flag due to inconclusive regulatory evidence.",
+                    status=LegalStatus.AMBIGU,
                 )
             )
 

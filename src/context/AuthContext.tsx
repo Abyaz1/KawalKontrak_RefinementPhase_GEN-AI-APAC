@@ -70,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, authAvailable: true, loginWithGoogle, logout }}
+      value={{ user, loading, authAvailable: firebaseEnabled, loginWithGoogle, logout }}
     >
       {children}
     </AuthContext.Provider>

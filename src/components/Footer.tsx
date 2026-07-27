@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useI18n } from '@/lib/i18n';
 import styles from './Footer.module.css';
 
@@ -15,7 +16,7 @@ export function Footer() {
           {/* Brand */}
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>
-              <img src="/logo.png" alt="KawalKontrak Logo" className={styles.logoImg} /> KawalKontrak.ai
+              <Image src="/logo.png" alt="KawalKontrak Logo" width={32} height={32} className={styles.logoImg} /> KawalKontrak.ai
             </div>
             <p className={styles.footerTagline}>
               {t.footer_tagline}
