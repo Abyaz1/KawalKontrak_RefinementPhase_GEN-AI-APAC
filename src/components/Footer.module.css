@@ -31,6 +31,13 @@
   margin-bottom: var(--space-md);
 }
 
+.logoImg {
+  height: 28px;
+  width: auto;
+  border-radius: 4px;
+  object-fit: contain;
+}
+
 .footerTagline {
   font-size: 0.9rem;
   color: var(--color-neutral);

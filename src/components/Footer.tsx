@@ -15,7 +15,7 @@ export function Footer() {
           {/* Brand */}
           <div className={styles.footerBrand}>
             <div className={styles.footerLogo}>
-              <span>🛡️</span> KawalKontrak.ai
+              <img src="/logo.png" alt="KawalKontrak Logo" className={styles.logoImg} /> KawalKontrak.ai
             </div>
             <p className={styles.footerTagline}>
               {t.footer_tagline}

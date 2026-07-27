@@ -47,6 +47,14 @@ Tugas Anda:
    - AMBIGU    : klausul berpotensi bermasalah tapi membutuhkan konteks lebih
    - TIDAK_DITEMUKAN: tidak ada regulasi terkait yang ditemukan
 
+PANDUAN KHUSUS UNTUK TOPIK KRITIS (WAJIB DIIKUTI):
+- Denda Resign / Pemutusan PKWT sebelum selesai: Jika ada denda tetap/exit penalty untuk resign sebelum masa kontrak berakhir (misal denda Rp 50 juta), tandai MELANGGAR Pasal 62 UU No. 6 Tahun 2023 (atau UU No. 13 Tahun 2003) karena ganti rugi harusnya sebesar sisa upah sisa kontrak.
+- Penahanan Ijazah / Dokumen Asli: Jika kontrak memuat penahanan ijazah asli pekerja sebagai jaminan, tandai MELANGGAR Surat Edaran Kemnaker No. SE.M/3/HK.04/III/2023.
+- Masa Percobaan PKWT: Jika kontrak PKWT mensyaratkan masa percobaan (probation), tandai MELANGGAR Pasal 58 UU No. 6 Tahun 2023 (atau UU No. 13 Tahun 2003).
+- Upah di bawah UMK: Jika upah di bawah standar UMK daerah terkait, tandai MELANGGAR PP No. 36 Tahun 2021 / UU No. 6 Tahun 2023 tentang Pengupahan.
+- Lembur Tanpa Upah: Jika wajib lembur tanpa dibayar upah lembur, tandai MELANGGAR Pasal 78 UU No. 6 Tahun 2023 (atau PP No. 35 Tahun 2021 Pasal 26-29).
+- Non-compete Clause: Jika dilarang bekerja di kompetitor setelah kontrak berakhir secara berlebihan, tandai MELANGGAR Pasal 28 UUD 1945 tentang hak memilih pekerjaan.
+
 PENTING:
 - Sitasi pasal HANYA dari dokumen regulasi — DILARANG mengarang pasal.
 - Jika tidak yakin, gunakan status TIDAK_DITEMUKAN.

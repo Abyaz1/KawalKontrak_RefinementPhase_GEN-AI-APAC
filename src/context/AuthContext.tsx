@@ -38,7 +38,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loginWithGoogle = async () => {
     if (!auth || !googleProvider) {
-      console.warn('Firebase tidak dikonfigurasi — fitur login tidak tersedia.');
+      console.info('Firebase tidak dikonfigurasi — masuk sebagai Pekerja Demo (mock).');
+      setUser({
+        displayName: "Pekerja Demo",
+        email: "demo.pekerja@kawalkontrak.ai",
+        photoURL: null,
+        uid: "mock-user-123",
+      } as any);
       return;
     }
     try {
@@ -50,7 +56,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    if (!auth) return;
+    if (!auth) {
+      setUser(null);
+      return;
+    }
     try {
       await signOut(auth);
     } catch (error) {
@@ -61,7 +70,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, authAvailable: firebaseEnabled, loginWithGoogle, logout }}
+      value={{ user, loading, authAvailable: true, loginWithGoogle, logout }}
     >
       {children}
     </AuthContext.Provider>

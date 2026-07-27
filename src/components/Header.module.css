@@ -45,6 +45,13 @@
   white-space: nowrap;
 }
 
+.logoImg {
+  height: 32px;
+  width: auto;
+  border-radius: 6px;
+  object-fit: contain;
+}
+
 .logo:hover {
   opacity: 0.9;
   text-decoration: none;

@@ -45,6 +45,7 @@ export function Header() {
       <nav className={s.nav}>
         <div className={s.navLeft}>
           <Link href="/" className={s.logo} onClick={closeMobile}>
+            <img src="/logo.png" alt="KawalKontrak Logo" className={s.logoImg} />
             <span>KawalKontrak<span style={{ color: 'var(--color-brand-light)' }}>.ai</span></span>
           </Link>
 
