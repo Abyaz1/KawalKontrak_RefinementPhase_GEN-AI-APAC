@@ -79,4 +79,4 @@ def test_transcribe_request_enforces_min_payload():
 
 def test_config_model_lite():
     from backend_python import config
-    assert config.MODEL_LITE == "gemini-3.5-flash-lite"
+    assert config.MODEL_LITE == "gemini-2.5-flash"
