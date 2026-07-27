@@ -44,7 +44,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email: "demo.pekerja@kawalkontrak.ai",
         photoURL: null,
         uid: "mock-user-123",
-      } as any);
+      } as unknown as User);
       return;
     }
     try {

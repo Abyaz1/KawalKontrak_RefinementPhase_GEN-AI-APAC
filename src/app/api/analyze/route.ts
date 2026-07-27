@@ -209,7 +209,7 @@ export async function POST(req: Request) {
         ...(BACKEND_SHARED_SECRET ? { 'x-backend-secret': BACKEND_SHARED_SECRET } : {}),
       },
       body: JSON.stringify({ contractText, region: safeRegion, locale: safeLocale }),
-      // Menggunakan req.signal (agar batal jika user menutup tab) ATAU timeout 3 menit.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       signal: req.signal ? (AbortSignal as any).any([req.signal, AbortSignal.timeout(180_000)]) : AbortSignal.timeout(180_000),
     });
     if (!upstream.ok || !upstream.body) {
@@ -263,8 +263,9 @@ export async function POST(req: Request) {
           processLine(buffer); // Sisa buffer tanpa newline penutup
           controller.close();
         }
-      } catch (streamError: any) {
-        if (streamError?.name !== 'AbortError') {
+      } catch (streamError: unknown) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if ((streamError as any)?.name !== 'AbortError') {
           console.error('[API Proxy] Stream terputus:', streamError);
           try { controller.error(streamError); } catch {}
         }

@@ -327,7 +327,7 @@ class TestVerifier:
         from backend_python.agents.verifier import verify_red_flags
 
         client = _make_client()  # API tidak boleh dipanggil
-        valid_flags, status = asyncio.run(verify_red_flags([], client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags([], client, locale="id"))
 
         assert valid_flags == []
         assert status == "passed"
