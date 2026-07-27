@@ -16,6 +16,12 @@ Endpoint utama:
     GET  /health          → Cek status server (untuk monitoring & load balancer)
     GET  /                → Info API (untuk debugging)
 
+Google ADK Endpoints (via mounted sub-app di /adk):
+    POST /adk/run         → ADK non-streaming
+    POST /adk/run_sse     → ADK Server-Sent Events (SSE) streaming
+    GET  /adk/list-apps   → Daftar agent yang tersedia
+    GET  /adk/health      → ADK health check
+
 Keamanan:
     Jika BACKEND_SHARED_SECRET di-set, semua endpoint (kecuali /health
     dan /) mewajibkan header 'x-backend-secret' — sehingga hanya proxy
@@ -47,6 +53,33 @@ from backend_python.orchestrator import (
     run_analysis_pipeline,
     run_analysis_pipeline_stream,
 )
+
+# ── Google ADK FastAPI Sub-App ────────────────────────────────────────────────
+# ADK menyediakan endpoint standar /run, /run_sse, dsb. untuk agent kawal_kontrak.
+# Sub-app ini di-mount ke /adk sehingga tidak konflik dengan endpoint custom.
+try:
+    import os as _os
+    from pathlib import Path as _Path
+    from google.adk.cli.fast_api import get_fast_api_app as _get_adk_app
+
+    _agents_dir = str(_Path(__file__).parent / "agents")
+    _adk_app = _get_adk_app(
+        agents_dir=_agents_dir,
+        web=False,
+        allow_origins=None,
+        use_local_storage=True,
+    )
+    _ADK_AVAILABLE = True
+except Exception as _adk_err:
+    _ADK_AVAILABLE = False
+    _adk_app = None
+    import logging as _logging
+    _logging.getLogger(__name__).warning(
+        f"Google ADK sub-app tidak bisa dimuat: {_adk_err}. "
+        "Endpoint /adk/* tidak tersedia."
+    )
+
+
 
 # ── Konfigurasi Logging ───────────────────────────────────────────────────────
 
@@ -85,7 +118,12 @@ async def lifespan(app: FastAPI):
     logger.info("KawalKontrak.ai Python Backend — Shutting down")
 
 
+import os
+import psutil
+
 # ── FastAPI App ───────────────────────────────────────────────────────────────
+
+is_prod = os.getenv("ENVIRONMENT") == "production"
 
 app = FastAPI(
     title="KawalKontrak.ai — AI Backend",
@@ -95,19 +133,26 @@ app = FastAPI(
     ),
     version="3.0.0",
     lifespan=lifespan,
+    docs_url=None if is_prod else "/docs",
+    redoc_url=None if is_prod else "/redoc",
+    openapi_url=None if is_prod else "/openapi.json",
 )
 
-# Izinkan request dari server Next.js (localhost:3000) saat development
+cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
+cors_origins = [origin.strip() for origin in cors_origins_env.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["POST", "GET"],
     allow_headers=["*"],
 )
+
+# Mount ADK sub-app ke /adk jika berhasil dimuat
+if _ADK_AVAILABLE and _adk_app is not None:
+    app.mount("/adk", _adk_app)
+    logger.info("Google ADK sub-app berhasil di-mount di /adk")
 
 
 # ── Middleware: Shared Secret (proteksi endpoint AI) ─────────────────────────
@@ -162,6 +207,8 @@ async def root() -> dict[str, Any]:
         "version": "3.0.0",
         "status": "online",
         "corpus_mode": config.corpus_mode(),
+        "adk_enabled": _ADK_AVAILABLE,
+        "adk_endpoint": "/adk" if _ADK_AVAILABLE else None,
         "pipeline": [
             f"0. Transcriber — foto/scan ({config.MODEL_CORE}, vision)",
             f"1. Extractor ({config.MODEL_LITE})",
@@ -178,7 +225,14 @@ async def health_check() -> dict[str, str]:
     Health check endpoint untuk load balancer dan monitoring.
     Selama server berjalan, ini akan selalu mengembalikan status 'healthy'.
     """
-    return {"status": "healthy"}
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    return {
+        "status": "healthy",
+        "memory_mb": str(round(mem_info.rss / 1024 / 1024, 2)),
+        "model_core": config.MODEL_CORE,
+        "model_lite": config.MODEL_LITE
+    }
 
 
 @app.post(

@@ -27,7 +27,7 @@
  */
 
 import { analyzeContractLocal } from '@/lib/local-engine';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { checkRateLimit, getClientIp, incrementActive, decrementActive } from '@/lib/rate-limit';
 import { extractSalaryFromText, validateSalaryAgainstUMK } from '@/lib/umk-database';
 import type { AnalysisResult, RedFlag } from '@/types';
 
@@ -157,14 +157,23 @@ export async function POST(req: Request) {
       { 'Retry-After': String(rl.retryAfterSeconds) },
     );
   }
-
-  // 2. Parse & validasi input
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonError('INVALID_JSON', 'Format request tidak valid.', 400);
+  
+  if (!incrementActive(`concurrent:${ip}`, 5)) {
+    return jsonError(
+      'CONCURRENCY_LIMITED',
+      'Terlalu banyak analisis berjalan bersamaan. Tunggu proses yang sedang berjalan selesai.',
+      429,
+    );
   }
+
+  try {
+    // 2. Parse & validasi input
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError('INVALID_JSON', 'Format request tidak valid.', 400);
+    }
 
   const { contractText, region = '', locale = 'en' } = body as {
     contractText?: string;
@@ -199,8 +208,8 @@ export async function POST(req: Request) {
         ...(BACKEND_SHARED_SECRET ? { 'x-backend-secret': BACKEND_SHARED_SECRET } : {}),
       },
       body: JSON.stringify({ contractText, region: safeRegion, locale: safeLocale }),
-      // Batas keseluruhan streaming; pipeline normal jauh lebih cepat
-      signal: AbortSignal.timeout(180_000),
+      // Menggunakan req.signal (agar batal jika user menutup tab) ATAU timeout 3 menit.
+      signal: req.signal ? (AbortSignal as any).any([req.signal, AbortSignal.timeout(180_000)]) : AbortSignal.timeout(180_000),
     });
     if (!upstream.ok || !upstream.body) {
       throw new Error(`Python backend error ${upstream.status}`);
@@ -236,6 +245,10 @@ export async function POST(req: Request) {
 
       try {
         for (;;) {
+          if (req.signal.aborted) {
+            await reader.cancel();
+            break;
+          }
           const { done, value } = await reader.read();
           if (done) break;
           buffer += decoder.decode(value, { stream: true });
@@ -245,11 +258,17 @@ export async function POST(req: Request) {
             buffer = buffer.slice(newlineIdx + 1);
           }
         }
-        processLine(buffer); // Sisa buffer tanpa newline penutup
-        controller.close();
-      } catch (streamError) {
-        console.error('[API Proxy] Stream terputus:', streamError);
-        controller.error(streamError);
+        if (!req.signal.aborted) {
+          processLine(buffer); // Sisa buffer tanpa newline penutup
+          controller.close();
+        }
+      } catch (streamError: any) {
+        if (streamError?.name !== 'AbortError') {
+          console.error('[API Proxy] Stream terputus:', streamError);
+          try { controller.error(streamError); } catch {}
+        }
+      } finally {
+        try { reader.releaseLock(); } catch {}
       }
     },
   });

@@ -21,6 +21,7 @@ Output: dict[flag_id → email_template]
 
 import json
 import logging
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from google import genai
 from google.genai import types
@@ -50,6 +51,7 @@ Panjang: 100-180 kata per email.
 """.strip()
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
 async def generate_negotiations(
     flags: list[RedFlagDraft],
     client: genai.Client,

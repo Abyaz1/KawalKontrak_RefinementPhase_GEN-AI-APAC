@@ -45,7 +45,6 @@ next-env.d.ts
 AGENT_CONTEXT.md
 
 # docs folder
-/docs/
 
 # Python
 __pycache__/

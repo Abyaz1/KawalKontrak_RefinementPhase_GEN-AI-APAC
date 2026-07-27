@@ -67,6 +67,24 @@ export function checkRateLimit(
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
+const activeRequests = new Map<string, number>();
+
+export function incrementActive(key: string, limit: number = 5): boolean {
+  const current = activeRequests.get(key) ?? 0;
+  if (current >= limit) return false;
+  activeRequests.set(key, current + 1);
+  return true;
+}
+
+export function decrementActive(key: string): void {
+  const current = activeRequests.get(key) ?? 0;
+  if (current <= 1) {
+    activeRequests.delete(key);
+  } else {
+    activeRequests.set(key, current - 1);
+  }
+}
+
 /** Ambil alamat IP client dari request (di belakang proxy/CDN). */
 export function getClientIp(req: Request): string {
   const forwarded = req.headers.get('x-forwarded-for');

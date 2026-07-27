@@ -23,6 +23,8 @@ Output: (list[RedFlagDraft] valid, status: 'passed' | 'failed_open')
 
 import json
 import logging
+import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from google import genai
 from google.genai import types
@@ -75,11 +77,12 @@ FORMAT OUTPUT (WAJIB): balas HANYA dengan satu JSON array valid, tanpa teks lain
 _VERIFICATION_LIST_ADAPTER = TypeAdapter(list[VerificationResult])
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
 async def verify_red_flags(
     red_flags: list[RedFlagDraft],
     client: genai.Client,
     locale: str = "en",
-) -> tuple[list[RedFlagDraft], str]:
+) -> tuple[list[RedFlagDraft], list[RedFlagDraft], str]:
     """
     Memverifikasi validitas setiap red flag untuk mencegah halusinasi (async).
 
@@ -89,7 +92,7 @@ async def verify_red_flags(
         locale:    Bahasa nilai output.
 
     Returns:
-        Tuple (daftar flag yang lolos, status verifikasi):
+        Tuple (daftar flag yang lolos, daftar flag yang ditolak, status verifikasi):
           - 'passed'      : audit berjalan dan flag tersaring.
           - 'failed_open' : audit error — semua flag diloloskan tanpa
                             filter dan hal ini DIBERITAHUKAN ke frontend
@@ -158,18 +161,21 @@ async def verify_red_flags(
                     f"Verifier: '{v.flag_id}' ditolak — {v.reason or 'tidak ada alasan'}"
                 )
 
-        # Filter: hanya loloskan red flag yang dinyatakan valid.
+        # Filter: pisahkan yang lolos dan ditolak
         # Jika suatu flag_id tidak ada dalam hasil verifikasi (edge case),
-        # anggap valid agar tidak ada data yang hilang secara diam-diam.
-        valid_flags = [
-            rf for rf in red_flags
-            if validity_map.get(rf.flag_id, True)
-        ]
+        # anggap TIDAK valid (bias: safety first, human review).
+        valid_flags = []
+        rejected_flags = []
+        for rf in red_flags:
+            if validity_map.get(rf.flag_id, False):
+                valid_flags.append(rf)
+            else:
+                rejected_flags.append(rf)
 
         logger.info(
             f"Verifier: {len(valid_flags)}/{len(red_flags)} red flags lolos verifikasi."
         )
-        return valid_flags, "passed"
+        return valid_flags, rejected_flags, "passed"
 
     except Exception as exc:
         # Fail-open TAPI ter-lapor: flag dikembalikan tanpa filter dan
@@ -179,4 +185,4 @@ async def verify_red_flags(
             f"Verifier: Gagal, mengembalikan semua red flags tanpa filter — {exc}",
             exc_info=True,
         )
-        return red_flags, "failed_open"
+        return red_flags, [], "failed_open"

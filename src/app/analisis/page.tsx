@@ -198,7 +198,11 @@ async function readFileAsText(file: File): Promise<string> {
       pages.push(text);
     }
 
-    return pages.join('\n\n');
+    const pdfText = pages.join('\n\n');
+    if (!pdfText.trim()) {
+      throw new Error('PDF berisi gambar hasil scan tanpa teks yang bisa dibaca. Silakan gunakan tab "Dari Foto/Scan" untuk mengekstrak teksnya.');
+    }
+    return pdfText;
   }
 
   throw new Error('Format file tidak didukung. Gunakan PDF atau TXT.');
@@ -1152,6 +1156,9 @@ export default function AnalisisPage() {
                 </option>
               ))}
             </select>
+            <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#854d0e', backgroundColor: '#fef9c3', padding: '8px', borderRadius: '4px' }} role="alert">
+              ⚠️ Data UMK per 2025 (Permenaker No. 16/2024), harap verifikasi ulang ke Kepgub resmi untuk tahun berjalan.
+            </div>
           </div>
 
           {/* Submit */}

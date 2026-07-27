@@ -29,5 +29,13 @@ pydantic==2.13.4           # Validasi & serialisasi (Structured Output Gemini)
 # --- Environment Management ---
 python-dotenv==1.2.2       # Membaca variabel dari file .env
 
-# --- HTTP Client (dipakai google-genai & testing) ---
+# --- HTTP Client & Retries ---
 httpx==0.28.1
+tenacity==8.3.0            # Exponential backoff/retry untuk pemanggilan API
+
+# --- Testing ---
+pytest==8.3.4
+pytest-asyncio==0.23.5
+
+# --- Framework ---
+google-adk==2.5.0

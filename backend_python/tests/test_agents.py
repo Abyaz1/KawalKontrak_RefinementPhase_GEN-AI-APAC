@@ -279,7 +279,7 @@ class TestVerifier:
         client = _make_client(parsed_value=verifications)
 
         flags = [self._make_flag("RF_001")]
-        valid_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
 
         assert len(valid_flags) == 1
         assert status == "passed"
@@ -298,7 +298,7 @@ class TestVerifier:
         client = _make_client(parsed_value=verifications)
 
         flags = [self._make_flag("RF_001")]
-        valid_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
 
         assert len(valid_flags) == 0  # Flag ditolak
         assert status == "passed"
@@ -317,7 +317,7 @@ class TestVerifier:
         client = _make_client(parsed_value=verifications)
 
         flags = [self._make_flag("RF_001")]
-        valid_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
 
         assert len(valid_flags) == 0
         assert status == "passed"
@@ -342,15 +342,15 @@ class TestVerifier:
         client.aio.models.generate_content = AsyncMock(side_effect=Exception("API down"))
 
         flags = [self._make_flag("RF_001"), self._make_flag("RF_002")]
-        valid_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
 
         # Fail-open: semua flag dikembalikan
         assert len(valid_flags) == 2
         # Tapi status dilaporkan sebagai 'failed_open' untuk frontend
         assert status == "failed_open"
 
-    def test_ver_unknown_flag_id_defaults_to_valid(self):
-        """VER: Flag_id tidak ada dalam hasil verifikasi → dianggap valid (tidak hilang diam-diam)."""
+    def test_ver_unknown_flag_id_defaults_to_invalid(self):
+        """VER: Flag_id tidak ada dalam hasil verifikasi → dianggap TIDAK valid."""
         from backend_python.agents.verifier import verify_red_flags
 
         # Verifier mengembalikan hasil untuk RF_999 (ID berbeda)
@@ -358,10 +358,11 @@ class TestVerifier:
         client = _make_client(parsed_value=verifications)
 
         flags = [self._make_flag("RF_001")]  # RF_001 tidak ada di hasil verifikasi
-        valid_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
+        valid_flags, rejected_flags, status = asyncio.run(verify_red_flags(flags, client, locale="id"))
 
-        # RF_001 tidak ditemukan di peta → default valid=True → lolos
-        assert len(valid_flags) == 1
+        # RF_001 tidak ditemukan di peta → default valid=False → ditolak
+        assert len(valid_flags) == 0
+        assert len(rejected_flags) == 1
 
 
 # ─── NEG: Agent Negotiator ────────────────────────────────────────────────────

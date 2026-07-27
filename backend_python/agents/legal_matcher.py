@@ -20,7 +20,10 @@ Input:  list[ExtractedClause]
 Output: list[MatchedClause]
 """
 
+import json
 import logging
+import asyncio
+from tenacity import retry, stop_after_attempt, wait_exponential
 
 from google import genai
 from google.genai import types
@@ -95,6 +98,7 @@ def _build_clauses_prompt(clauses: list[ExtractedClause]) -> str:
     return "\n\n".join(lines)
 
 
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
 async def match_laws(
     clauses: list[ExtractedClause],
     client: genai.Client,

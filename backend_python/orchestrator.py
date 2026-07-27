@@ -243,10 +243,21 @@ async def run_analysis_pipeline_stream(
         # bersamaan untuk memangkas latensi satu tahap penuh.
         yield _stage_event("verifier", "running")
         yield _stage_event("negotiator", "running")
-        (verified_flags, verifier_status), template_map = await asyncio.gather(
+        (verified_flags, rejected_flags, verifier_status), template_map = await asyncio.gather(
             verify_red_flags(graded.red_flags, client, locale),
             generate_negotiations(graded.red_flags, client, locale),
         )
+
+        # Convert rejected red flags back to review clauses (FR-05 fallback rule)
+        for rejected in rejected_flags:
+            review_clauses.append(
+                ReviewClause(
+                    pasal_kontrak=rejected.pasal_kontrak,
+                    topik=rejected.potensi_masalah,
+                    alasan="Diturunkan dari Red Flag karena bukti regulasi kurang kuat menurut Verifier AI.",
+                )
+            )
+
         yield _stage_event(
             "verifier",
             "done",

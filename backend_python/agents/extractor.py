@@ -2,21 +2,17 @@
 KawalKontrak.ai — Agent 1: Extractor
 ======================================
 
-Tanggung Jawab:
-    Membaca teks kontrak kerja mentah dan menguraikannya menjadi
-    daftar klausul terstruktur. Agen ini TIDAK melakukan penghakiman
-    hukum — tugasnya murni ekstraksi dan klasifikasi topik.
-
-Model:  KK_MODEL_LITE (default gemini-2.5-flash-lite — sesuai TRD §3,
-        tugas ekstraksi volume tinggi memakai model termurah)
-Input:  Teks kontrak kerja mentah (str)
-Output: list[ExtractedClause]
+Dua mode penggunaan:
+  1. Sebagai ADK Agent (`extractor_agent`) — untuk integrasi Google ADK.
+  2. Sebagai fungsi `extract_clauses()` — dipanggil oleh pipeline tools.
 """
 
 import logging
+from tenacity import retry, stop_after_attempt, wait_exponential
 
-from google import genai
+from google import adk, genai
 from google.genai import types
+from pydantic import BaseModel, Field
 
 from backend_python.config import MODEL_LITE
 from backend_python.models import ExtractedClause
@@ -24,11 +20,7 @@ from backend_python.utils import locale_instruction
 
 logger = logging.getLogger(__name__)
 
-# Batas karakter teks kontrak yang dikirim ke model.
-# Kontrak ≤ 5 halaman ± 15.000 karakter; 60.000 memberi ruang untuk kontrak
-# panjang. Jika terpotong, orchestrator menandai metadata.truncated = True
-# sehingga UI dapat memperingatkan pengguna (bukan memotong diam-diam).
-MAX_CONTRACT_CHARS = 60_000
+MAX_CONTRACT_CHARS = 80_000  # ~20.000 kata, cukup untuk kontrak besar
 
 _SYSTEM_PROMPT = """
 Anda adalah seorang paralegal spesialis ketenagakerjaan Indonesia yang sangat jeli.
@@ -36,62 +28,65 @@ Tugas Anda: membaca Surat Perjanjian Kerja (SPK) dan mengurai setiap klausul/pas
 
 Panduan Ekstraksi:
 1. Ekstrak setiap klausul secara verbatim (kutipan asli dari teks). JANGAN ringkas atau ubah kalimatnya.
-2. Tentukan topik utama (mis. Pengupahan, Waktu Kerja, PHK, PKWT, Lembur, Cuti, Nonkompetisi, Penahanan Dokumen, Denda, dll.).
-3. Aturan 'indikasi_masalah' (KRUSIAL): Set 'indikasi_masalah' = true untuk semua klausul yang berpotensi melanggar hukum, merugikan pekerja, atau berisi topik-topik kritis berikut (sekalipun kalimatnya pendek atau terlihat biasa):
-   - Pengupahan/Gaji: Semua klausul yang menyebutkan nominal gaji (untuk diverifikasi terhadap UMP/UMK).
-   - Penahanan Dokumen: Penahanan ijazah asli, sertifikat, atau dokumen pribadi pekerja.
-   - Masa Percobaan (Probation): Klausul percobaan untuk pekerja kontrak (PKWT) — dilarang oleh undang-undang.
-   - Waktu Kerja & Lembur: Jam kerja berlebih, atau denda lembur/kerja tanpa uang lembur.
-   - Penalti/Denda: Kewajiban membayar denda jika mengundurkan diri (exit penalty), ganti rugi biaya training.
-   - Hak Cuti/Istirahat: Pembatasan cuti, cuti hamil/melahirkan, atau tidak adanya hari libur.
-   - Pemutusan Hubungan Kerja (PHK): Klausul pemecatan sepihak, pelepasan hak pesangon/uang kompensasi PKWT.
-   - Non-kompetisi (Non-compete): Larangan bekerja di perusahaan kompetitor pasca-kerja.
+2. Tentukan topik utama (mis. Pengupahan, Waktu Kerja, dll).
+3. Set 'indikasi_masalah' = true untuk semua klausul yang berpotensi melanggar hukum, merugikan pekerja.
 4. JANGAN menganalisis pasal atau memberikan saran hukum — tugas Anda murni ekstraksi sensitif.
 """.strip()
 
+# ── ADK Agent Definition ─────────────────────────────────────────────────────
 
+class ExtractorInput(BaseModel):
+    contract_text: str = Field(description="Raw contract text")
+    locale: str = Field(default="en")
+
+class ExtractorOutput(BaseModel):
+    clauses: list[ExtractedClause]
+
+extractor_agent = adk.Agent(
+    name="extractor",
+    model=MODEL_LITE,
+    instruction=_SYSTEM_PROMPT,
+    input_schema=ExtractorInput,
+    output_schema=ExtractorOutput,
+)
+
+# ── Fungsi Pipeline (dipanggil oleh tools.py) ────────────────────────────────
+
+@retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=2, max=10), reraise=True)
 async def extract_clauses(
     contract_text: str,
     client: genai.Client,
     locale: str = "en",
 ) -> list[ExtractedClause]:
     """
-    Mengekstrak semua klausul dari teks kontrak kerja (async).
+    Mengurai teks kontrak menjadi daftar klausul terstruktur (async).
 
     Args:
-        contract_text: Teks mentah SPK (sudah dipotong orchestrator bila perlu).
+        contract_text: Teks kontrak yang sudah dipotong ke MAX_CONTRACT_CHARS.
         client:        Instance Google GenAI client.
-        locale:        Bahasa nilai output ('id' / 'en').
+        locale:        Bahasa nilai output.
 
     Returns:
         Daftar ExtractedClause. List kosong jika gagal.
     """
-    logger.info("Extractor: Memulai ekstraksi klausul...")
-
+    logger.info(f"Extractor: Memproses kontrak {len(contract_text)} karakter...")
     try:
         response = await client.aio.models.generate_content(
             model=MODEL_LITE,
             contents=(
-                f"Berikut adalah teks Surat Perjanjian Kerja (SPK):\n\n"
+                f"Ekstrak semua klausul dari Surat Perjanjian Kerja berikut:\n\n"
                 f"{contract_text}"
             ),
             config=types.GenerateContentConfig(
                 system_instruction=_SYSTEM_PROMPT + locale_instruction(locale),
-                temperature=0.1,  # Rendah = deterministik, lebih presisi untuk ekstraksi
+                temperature=0.1,  # Deterministik untuk ekstraksi faktual
                 response_mime_type="application/json",
                 response_schema=list[ExtractedClause],
             ),
         )
-
-        result: list[ExtractedClause] = response.parsed  # type: ignore[assignment]
-
-        if not result:
-            logger.warning("Extractor: Tidak ada klausul yang berhasil diekstrak.")
-            return []
-
-        logger.info(f"Extractor: Berhasil mengekstrak {len(result)} klausul.")
-        return result
-
+        clauses: list[ExtractedClause] = response.parsed  # type: ignore[assignment]
+        logger.info(f"Extractor: {len(clauses)} klausul berhasil diekstrak.")
+        return clauses
     except Exception as exc:
         logger.error(f"Extractor: Gagal — {exc}", exc_info=True)
         return []

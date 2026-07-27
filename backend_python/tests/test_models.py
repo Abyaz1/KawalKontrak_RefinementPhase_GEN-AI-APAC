@@ -75,3 +75,8 @@ def test_analyze_request_enforces_min_length():
 def test_transcribe_request_enforces_min_payload():
     with pytest.raises(ValidationError):
         TranscribeRequest(imageBase64="abc", mimeType="image/jpeg")
+
+
+def test_config_model_lite():
+    from backend_python import config
+    assert config.MODEL_LITE == "gemini-3.5-flash-lite"

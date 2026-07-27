@@ -5,12 +5,16 @@
    Dasar hukum kenaikan 2025: Permenaker No. 16 Tahun 2024
    (kenaikan upah minimum 6,5% dari nilai 2024).
 
-   ⚠️ PENTING — VERIFIKASI BERKALA:
-   Angka di bawah dikompilasi dari publikasi Keputusan Gubernur
-   masing-masing provinsi. Sebelum rilis produksi, verifikasi ulang
-   setiap nilai terhadap Kepgub resmi (jdih.kemenaker.go.id) dan
-   perbarui setiap kali tahun berganti. Nilai yang salah berarti
-   flag UMK yang salah kepada pengguna.
+   ⚠️ PENTING — VERIFIKASI BERKALA & LIMITASI:
+   1. Angka di bawah dikompilasi dari publikasi Keputusan Gubernur
+      masing-masing provinsi. Sebelum rilis produksi, verifikasi ulang
+      setiap nilai terhadap Kepgub resmi (jdih.kemenaker.go.id) dan
+      perbarui setiap kali tahun berganti. Nilai yang salah berarti
+      flag UMK yang salah kepada pengguna.
+   2. Berdasarkan regulasi PP No. 49 Tahun 2025, mekanisme UMK mungkin berubah.
+      Nilai saat ini hanya valid untuk 2025 dan harus diverifikasi untuk 2026.
+   3. Basis data ini HANYA MENCANGKUP 13 wilayah utama. Ini adalah batasan sadar
+      (known limitation) untuk fase saat ini.
    ============================================================ */
 
 export interface UMKData {
