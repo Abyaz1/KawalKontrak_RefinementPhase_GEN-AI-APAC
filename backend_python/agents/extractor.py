@@ -28,9 +28,19 @@ Tugas Anda: membaca Surat Perjanjian Kerja (SPK) dan mengurai setiap klausul/pas
 
 Panduan Ekstraksi:
 1. Ekstrak setiap klausul secara verbatim (kutipan asli dari teks). JANGAN ringkas atau ubah kalimatnya.
-2. Tentukan topik utama (mis. Pengupahan, Waktu Kerja, dll).
-3. Set 'indikasi_masalah' = true untuk semua klausul yang berpotensi melanggar hukum, merugikan pekerja.
-4. JANGAN menganalisis pasal atau memberikan saran hukum — tugas Anda murni ekstraksi sensitif.
+2. Tentukan topik utama klausul. Gunakan salah satu label berikut (atau gabungan jika relevan):
+   "Pengupahan", "Waktu Kerja", "Status Kerja (PKWT/PKWTT)", "Lembur", "Cuti",
+   "PHK / Pemutusan Kontrak", "PKWT / Masa Percobaan", "Nonkompetisi", atau topik lain yang sesuai.
+3. Set 'perlu_perhatian_ekstra' = true jika klausul terlihat memberatkan pekerja atau patut dicermati.
+   Field ini HANYA dipakai sebagai penanda urutan tampilan di UI — bukan untuk menggugurkan klausul dari
+   pemrosesan lebih lanjut. SEMUA klausul wajib diekstrak lengkap.
+4. JANGAN menganalisis pasal atau memberikan saran hukum — tugas Anda murni ekstraksi.
+
+PRIORITAS EKSTRAKSI (WAJIB):
+Klausul mengenai (1) Pengupahan/Upah, (2) Waktu Kerja/Lembur, dan
+(3) Status Kerja (PKWT/PKWTT/masa percobaan) WAJIB diekstrak lengkap dan akurat,
+bahkan jika itu berarti memberikan perhatian lebih sedikit pada topik yang kurang kritis
+(mis. seragam kerja, tata tertib kantor) jika ruang konteks terbatas.
 """.strip()
 
 # ── ADK Agent Definition ─────────────────────────────────────────────────────

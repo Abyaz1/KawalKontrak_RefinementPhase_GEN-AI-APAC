@@ -64,6 +64,7 @@ from backend_python.models import (
     RedFlag,
     ReviewClause,
     RiskLevel,
+    Severity,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,6 +103,55 @@ def _stage_event(stage: str, status: str, detail: dict[str, Any] | None = None) 
     if detail:
         event["detail"] = detail
     return event
+
+
+def _compute_risk_level(red_flags: list[RedFlag]) -> RiskLevel:
+    """
+    Hitung risk_level kontrak secara deterministik berdasarkan severity
+    tertinggi dari red flags yang telah terverifikasi (E1b fix).
+
+    Ini menggantikan nilai 'bebas' yang dihasilkan model Risk Grader,
+    sehingga risk_level SELALU konsisten dengan daftar red_flags yang tampil.
+    Jika tidak ada red flags, kontrak dianggap LOW risk.
+    """
+    if any(rf.severity == Severity.CRITICAL for rf in red_flags):
+        return RiskLevel.CRITICAL
+    if any(rf.severity == Severity.HIGH for rf in red_flags):
+        return RiskLevel.HIGH
+    if any(rf.severity == Severity.MEDIUM for rf in red_flags):
+        return RiskLevel.MEDIUM
+    return RiskLevel.LOW
+
+
+def _smart_truncate(text: str, max_chars: int) -> str:
+    """
+    Potong teks kontrak di batas paragraf/klausul terdekat sebelum max_chars
+    — bukan di tengah kalimat (E3b fix).
+
+    Strategi:
+    1. Cari baris kosong ganda (\n\n) terdekat sebelum batas — tanda antar paragraf.
+    2. Fallback ke newline tunggal terdekat jika tidak ada.
+    3. Fallback ke batas karakter keras jika tidak ada newline sama sekali.
+    Titik potong minimal 80% dari max_chars agar tidak terlalu banyak hilang.
+    """
+    if len(text) <= max_chars:
+        return text
+
+    candidate = text[:max_chars]
+    min_cut = int(max_chars * 0.8)  # jangan potong lebih dari 20% dari batas
+
+    # Cari baris kosong ganda (antar paragraf/klausul)
+    pos = candidate.rfind('\n\n')
+    if pos >= min_cut:
+        return text[:pos]
+
+    # Fallback: newline tunggal
+    pos = candidate.rfind('\n')
+    if pos >= min_cut:
+        return text[:pos]
+
+    # Fallback keras: potong di batas karakter
+    return candidate
 
 
 def _build_fallback_result(contract_text: str, locale: str) -> AnalysisResult:
@@ -177,13 +227,13 @@ async def run_analysis_pipeline_stream(
         yield {"type": "result", "data": cached_result}
         return
 
-    # Deteksi & tandai pemotongan teks (tidak lagi diam-diam)
+    # Deteksi & potong teks di batas klausul/paragraf terdekat (E3b fix)
     truncated = len(contract_text) > MAX_CONTRACT_CHARS
-    trimmed_text = contract_text[:MAX_CONTRACT_CHARS]
+    trimmed_text = _smart_truncate(contract_text, MAX_CONTRACT_CHARS)
     if truncated:
         logger.warning(
             f"Pipeline: Kontrak {len(contract_text)} karakter dipotong ke "
-            f"{MAX_CONTRACT_CHARS} — metadata.truncated = True."
+            f"{len(trimmed_text)} (batas paragraf) — metadata.truncated = True."
         )
 
     # Inisialisasi Gemini client (satu instance, dipakai semua agen)
@@ -286,6 +336,14 @@ async def run_analysis_pipeline_stream(
             for draft in verified_flags
         ]
 
+        # Hitung risk_level deterministik dari severity tertinggi red flags (E1b fix)
+        # Nilai dari model (graded.risk_level) diabaikan — ini menjamin konsistensi 100%
+        computed_risk_level = _compute_risk_level(final_flags)
+        logger.info(
+            f"Pipeline: risk_level model={graded.risk_level.value!r}, "
+            f"deterministik={computed_risk_level.value!r}"
+        )
+
         result = AnalysisResult(
             id=f"AN-{int(datetime.now(timezone.utc).timestamp())}",
             status="completed",
@@ -295,7 +353,7 @@ async def run_analysis_pipeline_stream(
             klausul_aman=graded.klausul_aman,
             klausul_tinjauan=review_clauses,
             ringkasan=graded.ringkasan,
-            risk_level=graded.risk_level,
+            risk_level=computed_risk_level,
             langkah_berikutnya=graded.langkah_berikutnya,
             disclaimer=_DISCLAIMER_ID if locale == "id" else _DISCLAIMER_EN,
             metadata=AnalysisMetadata(

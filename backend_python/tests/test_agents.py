@@ -92,15 +92,15 @@ class TestExtractor:
         from backend_python.agents.extractor import extract_clauses
 
         expected = [
-            ExtractedClause(klausul="Gaji Rp 2.500.000", topik="Pengupahan", indikasi_masalah=False),
-            ExtractedClause(klausul="Bekerja 10 jam tanpa lembur", topik="Waktu Kerja", indikasi_masalah=True),
+            ExtractedClause(klausul="Gaji Rp 2.500.000", topik="Pengupahan", perlu_perhatian_ekstra=False),
+            ExtractedClause(klausul="Bekerja 10 jam tanpa lembur", topik="Waktu Kerja", perlu_perhatian_ekstra=True),
         ]
         client = _make_client(parsed_value=expected)
 
         result = asyncio.run(extract_clauses("teks kontrak contoh", client, locale="id"))
 
         assert len(result) == 2
-        assert result[1].indikasi_masalah is True
+        assert result[1].perlu_perhatian_ekstra is True
 
     def test_ext03_returns_empty_list_on_model_failure(self):
         """EXT-03: Jika model error, kembalikan list kosong — tidak raise exception."""
@@ -133,21 +133,22 @@ class TestExtractor:
 class TestLegalMatcher:
     """
     Testing Plan §5.2 — Agent Legal-Matcher
-    LM-01: Klausul berindikasi masalah → hanya dikirim ke model (filter efisiensi)
-    LM-03: Jika tidak ada klausul berindikasi → proses semua
+    LM-01: Semua klausul (positif + negatif) harus dikirim ke model (E2a fix — tidak ada filtering)
+    LM-03: Jika tidak ada klausul → kembalikan list kosong
     """
 
     def test_lm01_only_flagged_clauses_are_sent(self):
-        """LM-01: Hanya klausul dengan indikasi_masalah=True yang dikirim ke model."""
+        """LM-01: Semua klausul dikirim ke model — tidak ada filtering berdasarkan perlu_perhatian_ekstra (E2a fix)."""
         from backend_python.agents.legal_matcher import _build_clauses_prompt
 
         clauses = [
-            ExtractedClause(klausul="Klausul aman", topik="Cuti", indikasi_masalah=False),
-            ExtractedClause(klausul="Klausul bermasalah", topik="PHK", indikasi_masalah=True),
+            ExtractedClause(klausul="Klausul aman", topik="Cuti", perlu_perhatian_ekstra=False),
+            ExtractedClause(klausul="Klausul bermasalah", topik="PHK", perlu_perhatian_ekstra=True),
         ]
         prompt = _build_clauses_prompt(clauses)
+        # Keduanya harus ada di prompt — tidak ada yang difilter
         assert "Klausul bermasalah" in prompt
-        assert "Klausul aman" in prompt  # _build_clauses_prompt menerima list sudah difilter
+        assert "Klausul aman" in prompt
 
     def test_lm03_empty_candidates_returns_empty_list(self):
         """LM-03: Input kosong → kembalikan list kosong tanpa error."""
@@ -158,16 +159,15 @@ class TestLegalMatcher:
         assert result == []
 
     def test_lm_filter_only_flagged_clauses(self):
-        """LM: Matcher hanya memproses klausul berindikasi masalah untuk hemat token."""
+        """LM: Semua klausul diproses terlepas dari perlu_perhatian_ekstra (E2a fix)."""
         from backend_python.agents.legal_matcher import match_laws
 
         clauses = [
-            ExtractedClause(klausul="Aman saja", topik="Cuti", indikasi_masalah=False),
+            ExtractedClause(klausul="Aman saja", topik="Cuti", perlu_perhatian_ekstra=False),
         ]
         client = _make_client(parsed_value=[])
-        # Ketika semua klausul tidak berindikasi masalah, fallback ke semua klausul
+        # Klausul diproses (bukan difilter), model mengembalikan [] → hasil kosong
         result = asyncio.run(match_laws(clauses, client, locale="id"))
-        # Hasilnya kosong karena model mengembalikan []
         assert result == []
 
 

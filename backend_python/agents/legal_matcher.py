@@ -3,8 +3,9 @@ KawalKontrak.ai — Agent 2: Legal Matcher
 ==========================================
 
 Tanggung Jawab:
-    Mencocokkan setiap klausul kontrak yang berpotensi bermasalah
-    dengan pasal-pasal regulasi ketenagakerjaan Indonesia.
+    Mencocokkan setiap klausul kontrak dengan pasal-pasal regulasi
+    ketenagakerjaan Indonesia. Seluruh klausul diproses — tidak ada
+    yang difilter berdasarkan `perlu_perhatian_ekstra` (E2a fix).
 
 Dua mode akses corpus (lihat backend_python/config.py):
   1. 'file_search' (direkomendasikan) — Gemini File Search Store:
@@ -107,22 +108,21 @@ async def match_laws(
     """
     Mencocokkan klausul kontrak dengan peraturan perundang-undangan (async).
 
+    Seluruh klausul dari Extractor diproses — tidak ada filtering berdasarkan
+    `perlu_perhatian_ekstra`. Ini memastikan klausul positif (SESUAI) dan
+    negatif (MELANGGAR/AMBIGU) sama-sama tertangkap dalam hasil akhir (E2a fix).
+
     Args:
-        clauses: Daftar klausul hasil ekstraksi. Klausul dengan
-                 `indikasi_masalah=True` diprioritaskan untuk hemat token.
+        clauses: Daftar SEMUA klausul hasil ekstraksi.
         client:  Instance Google GenAI client.
         locale:  Bahasa nilai output.
 
     Returns:
         Daftar MatchedClause. List kosong jika gagal.
     """
-    # Filter hanya klausul yang berpotensi bermasalah untuk efisiensi token
-    candidates = [c for c in clauses if c.indikasi_masalah]
-
-    # Jika semua klausul terlihat aman, proses semua (tidak boleh ada yang dilewati)
-    if not candidates:
-        logger.info("Legal Matcher: Tidak ada indikasi masalah — memproses semua klausul.")
-        candidates = clauses
+    # Proses SEMUA klausul — klausul positif harus tertangkap sebagai klausul_aman
+    # (bug E2 sebelumnya: hanya klausul bermasalah yang dikirim, klausul aman hilang)
+    candidates = list(clauses)
 
     if not candidates:
         logger.warning("Legal Matcher: Daftar klausul kosong, melewati tahap ini.")

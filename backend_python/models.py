@@ -45,10 +45,10 @@ class RiskLevel(str, Enum):
 
 class LegalStatus(str, Enum):
     """Status hukum sebuah klausul hasil pencocokan."""
-    SESUAI         = "SESUAI"
-    MELANGGAR      = "MELANGGAR"
+    SESUAI          = "SESUAI"
+    MELANGGAR       = "MELANGGAR"
     TIDAK_DITEMUKAN = "TIDAK_DITEMUKAN"
-    AMBIGU         = "AMBIGU"
+    AMBIGU          = "AMBIGU"
 
 
 # ── Sub-models (dipakai oleh beberapa model utama) ─────────────────────────
@@ -75,6 +75,10 @@ class ExtractedClause(BaseModel):
     """
     Satu klausul yang berhasil diekstrak dari teks kontrak mentah.
     Dihasilkan oleh: ExtractorAgent
+
+    Catatan: `perlu_perhatian_ekstra` adalah sinyal tampilan UI (urutan/penanda)
+    saja — bukan gerbang pemrosesan. Seluruh klausul tetap dikirim ke Legal
+    Matcher terlepas dari nilai field ini.
     """
     klausul: str = Field(
         description="Kutipan asli teks klausul dari kontrak"
@@ -85,10 +89,12 @@ class ExtractedClause(BaseModel):
             "'Waktu Kerja', 'PHK', 'PKWT', 'Lembur', dll."
         )
     )
-    indikasi_masalah: bool = Field(
+    perlu_perhatian_ekstra: bool = Field(
         description=(
-            "True jika klausul terlihat memberatkan pihak pekerja "
-            "atau berpotensi melanggar hukum ketenagakerjaan"
+            "True jika klausul terlihat memberatkan pihak pekerja atau "
+            "perlu dicermati lebih lanjut — dipakai HANYA sebagai penanda "
+            "urutan tampilan di UI, bukan untuk menggugurkan klausul dari "
+            "pemrosesan lebih lanjut."
         )
     )
 
@@ -188,7 +194,12 @@ class ContractSummary(BaseModel):
 
 
 class RiskGraderOutput(BaseModel):
-    """Output lengkap dari Risk Grader Agent sebelum verifikasi."""
+    """Output lengkap dari Risk Grader Agent sebelum verifikasi.
+
+    Catatan: field `risk_level` di sini dihasilkan model sebagai estimasi awal,
+    namun akan DIGANTIKAN oleh nilai deterministik yang dihitung di orchestrator
+    berdasarkan severity tertinggi dari red_flags yang terverifikasi.
+    """
     red_flags: list[RedFlagDraft]
     klausul_aman: list[SafeClause]
     ringkasan: ContractSummary

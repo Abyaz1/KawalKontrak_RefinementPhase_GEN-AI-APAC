@@ -7,7 +7,8 @@ Tanggung Jawab:
     dengan hukum. Agen ini bertugas:
     1. Membuat red flag dengan penjelasan bahasa awam dan analogi sederhana.
     2. Mengidentifikasi klausul yang sudah aman (safe clauses).
-    3. Menentukan level risiko keseluruhan kontrak (CRITICAL/HIGH/MEDIUM/LOW).
+    3. Memberikan estimasi awal risk_level (akan di-override deterministik
+       oleh orchestrator berdasarkan severity tertinggi — lihat E1b).
     4. Menyusun ringkasan kontrak dan langkah aksi untuk pekerja.
 
     Catatan: klausul berstatus TIDAK_DITEMUKAN TIDAK diproses di sini —
@@ -45,8 +46,22 @@ Tugas Anda:
    - Buat 'klausul aman' dengan penjelasan singkat kenapa ini baik.
 3. Abaikan klausul berstatus TIDAK_DITEMUKAN — klausul tersebut sudah
    ditangani terpisah sebagai "perlu tinjauan manusia".
-4. Tentukan level risiko keseluruhan kontrak berdasarkan temuan.
+4. Tentukan level risiko keseluruhan kontrak (estimasi awal — sistem akan menghitung ulang secara deterministik).
 5. Susun ringkasan kontrak dan daftar langkah aksi berurutan untuk pekerja.
+
+RUBRIK SEVERITY — WAJIB DIIKUTI (menentukan tingkat keparahan tiap red flag):
+
+| status_hukum | Kondisi Klausul                                                                 | Severity yang Ditetapkan          |
+|---|---|---|
+| MELANGGAR    | Menyangkut hak dasar: upah/gaji, pesangon, kompensasi PKWT, PHK sepihak        | CRITICAL                          |
+| MELANGGAR    | Menyangkut hal prosedural/administratif (format, bahasa kontrak, dll.)          | HIGH atau MEDIUM                  |
+| AMBIGU       | Berpotensi merugikan tapi membutuhkan konteks tambahan                          | MEDIUM (DILARANG CRITICAL — status belum pasti melanggar) |
+| AMBIGU       | Klausul wajib (kompensasi, pengupahan, jam kerja) tidak disebutkan sama sekali  | HIGH atau MEDIUM                  |
+
+ATURAN KONSISTENSI SEVERITY (WAJIB):
+- Klausul MELANGGAR tidak boleh diberi severity lebih rendah dari klausul AMBIGU sejenis.
+- Klausul AMBIGU DILARANG diberi severity CRITICAL — status belum pasti melanggar.
+- Jika ragu antara dua severity yang berdekatan, pilih yang lebih tinggi untuk klausul yang memengaruhi upah/status kerja pekerja.
 
 Prinsip penulisan:
 - Gunakan kata 'Anda' saat merujuk pekerja, bukan 'kamu' atau 'karyawan'.
@@ -71,6 +86,8 @@ async def grade_risks(
 
     Returns:
         RiskGraderOutput, atau None jika terjadi error fatal.
+        Catatan: field `risk_level` di output ini adalah estimasi model —
+        orchestrator akan menggantinya dengan nilai deterministik (E1b fix).
     """
     if not matched_clauses:
         logger.warning("Risk Grader: Daftar klausul kosong, tidak ada yang dinilai.")
@@ -106,7 +123,8 @@ async def grade_risks(
         logger.info(
             f"Risk Grader: Selesai — {len(result.red_flags)} red flags, "
             f"{len(result.klausul_aman)} klausul aman, "
-            f"level risiko: {result.risk_level.value}."
+            f"level risiko model: {result.risk_level.value} "
+            f"(akan di-override deterministik oleh orchestrator)."
         )
         return result
 
