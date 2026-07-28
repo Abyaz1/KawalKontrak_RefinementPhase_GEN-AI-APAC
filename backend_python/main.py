@@ -41,9 +41,8 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from google import genai
 
-from backend_python import config
+from backend_python import config, genai_client
 from backend_python.agents.transcriber import transcribe_contract_image
 from backend_python.models import (
     AnalysisResult,
@@ -341,7 +340,7 @@ async def transcribe_image(request: TranscribeRequest) -> TranscribeResponse:
             detail={"code": "IMAGE_TOO_LARGE", "message": "Ukuran gambar melebihi 10 MB."},
         )
 
-    client = genai.Client(api_key=config.GEMINI_API_KEY)
+    client = genai_client.get_client()
     text, warning = await transcribe_contract_image(
         image_bytes, request.mimeType, client, request.locale
     )

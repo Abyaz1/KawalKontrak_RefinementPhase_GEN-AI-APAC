@@ -47,9 +47,7 @@ from collections.abc import AsyncIterator
 from datetime import datetime, timezone
 from typing import Any
 
-from google import genai
-
-from backend_python import cache
+from backend_python import cache, genai_client
 from backend_python.agents.extractor import MAX_CONTRACT_CHARS, extract_clauses
 from backend_python.agents.legal_matcher import match_laws
 from backend_python.agents.negotiator import generate_negotiations
@@ -66,21 +64,9 @@ from backend_python.models import (
     RiskLevel,
     Severity,
 )
+from backend_python.results import build_fallback_result, _DISCLAIMER_EN, _DISCLAIMER_ID
 
 logger = logging.getLogger(__name__)
-
-# Teks disclaimer (ditampilkan selalu di bagian bawah hasil analisis)
-_DISCLAIMER_ID = (
-    "Analisis ini dihasilkan oleh Kecerdasan Buatan (AI) untuk tujuan literasi "
-    "dan edukasi hukum, BUKAN nasihat hukum yang mengikat. Untuk sengketa serius, "
-    "hubungi LBH Indonesia ((021) 3929840), konsultan hukum profesional, atau "
-    "serikat pekerja di organisasi Anda."
-)
-_DISCLAIMER_EN = (
-    "This analysis is AI-generated for educational and legal literacy purposes, "
-    "NOT binding legal advice. For serious disputes, contact LBH Indonesia "
-    "((021) 3929840), a professional legal consultant, or the labor union in your organization."
-)
 
 _REVIEW_REASON_ID = (
     "Tidak ditemukan referensi pasti dalam korpus regulasi ketenagakerjaan. "
@@ -154,49 +140,8 @@ def _smart_truncate(text: str, max_chars: int) -> str:
     return candidate
 
 
-def _build_fallback_result(contract_text: str, locale: str) -> AnalysisResult:
-    """
-    Membangun hasil analisis kosong (fallback) ketika pipeline gagal total.
-    Ini memastikan API selalu mengembalikan respons yang valid, bukan crash.
-    """
-    return AnalysisResult(
-        id=f"AN-FALLBACK-{int(datetime.now(timezone.utc).timestamp())}",
-        status="failed",
-        created_at=datetime.now(timezone.utc).isoformat(),
-        contract_hash=_sha256(contract_text),
-        red_flags=[],
-        klausul_aman=[],
-        klausul_tinjauan=[],
-        ringkasan=ContractSummary(
-            jenis="Tidak Diketahui" if locale == "id" else "Unknown",
-            status=(
-                "Analisis gagal — silakan coba lagi"
-                if locale == "id"
-                else "Analysis failed — please try again"
-            ),
-            harus_diubah=[],
-            sebaiknya_diubah=[],
-        ),
-        risk_level=RiskLevel.LOW,
-        langkah_berikutnya=(
-            ["Coba unggah ulang kontrak Anda."]
-            if locale == "id"
-            else ["Try re-uploading your contract."]
-        ),
-        disclaimer=_DISCLAIMER_ID if locale == "id" else _DISCLAIMER_EN,
-        metadata=AnalysisMetadata(
-            engine="pipeline-failed",
-            rag_enabled=False,
-            model="N/A",
-            rag_mode=corpus_mode(),
-            locale=locale,
-        ),
-    )
-
-
 async def run_analysis_pipeline_stream(
     contract_text: str,
-    api_key: str,
     locale: str = "en",
 ) -> AsyncIterator[dict[str, Any]]:
     """
@@ -237,7 +182,7 @@ async def run_analysis_pipeline_stream(
         )
 
     # Inisialisasi Gemini client (satu instance, dipakai semua agen)
-    client = genai.Client(api_key=api_key)
+    client = genai_client.get_client()
 
     try:
         # ── Agent 1: Extractor ────────────────────────────────────
@@ -382,24 +327,24 @@ async def run_analysis_pipeline_stream(
 
     except Exception as exc:
         logger.error(f"Pipeline: Gagal total — {exc}", exc_info=True)
-        fallback = _build_fallback_result(contract_text, locale)
-        yield {"type": "result", "data": fallback.model_dump(mode="json")}
+        yield _stage_event("pipeline", "error", {"message": str(exc)})
+        yield {"type": "result", "data": build_fallback_result(contract_hash, locale, return_dict=True)}
 
 
 async def run_analysis_pipeline(
     contract_text: str,
-    api_key: str,
     locale: str = "en",
 ) -> AnalysisResult:
     """
     Wrapper non-streaming: menjalankan pipeline dan mengembalikan hanya
     hasil akhirnya. Dipakai oleh endpoint POST /analyze (kompatibilitas).
     """
-    final_data: dict[str, Any] | None = None
-    async for event in run_analysis_pipeline_stream(contract_text, api_key, locale):
+    final_result: dict[str, Any] | None = None
+    async for event in run_analysis_pipeline_stream(contract_text, locale):
         if event.get("type") == "result":
-            final_data = event["data"]
+            final_result = event.get("data")
 
-    if final_data is None:  # Seharusnya tidak pernah terjadi
-        return _build_fallback_result(contract_text, locale)
-    return AnalysisResult.model_validate(final_data)
+    if not final_result:
+        logger.error("Pipeline: Selesai tapi tidak ada data hasil. Mengembalikan fallback.")
+        return build_fallback_result(_sha256(contract_text), locale, return_dict=False) # type: ignore[return-value]
+    return AnalysisResult.model_validate(final_result)

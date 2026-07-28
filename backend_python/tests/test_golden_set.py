@@ -58,7 +58,6 @@ def test_golden_set_end_to_end():
     result = asyncio.run(
         run_analysis_pipeline(
             contract_text=contract,
-            api_key=config.GEMINI_API_KEY,
             locale="id",
         )
     )

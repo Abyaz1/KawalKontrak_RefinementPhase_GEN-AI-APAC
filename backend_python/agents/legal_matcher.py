@@ -30,7 +30,13 @@ from google import genai
 from google.genai import types
 from pydantic import TypeAdapter
 
-from backend_python.config import MODEL_CORE, corpus_mode, corpus_parts, corpus_tools
+from backend_python.config import (
+    MODEL_CORE,
+    corpus_mode,
+    corpus_parts,
+    corpus_tools,
+    corpus_tools_vertex,
+)
 from backend_python.models import ExtractedClause, LegalMatchResult, MatchedClause
 from backend_python.utils import locale_instruction, parse_json_response
 
@@ -140,8 +146,8 @@ async def match_laws(
     )
 
     try:
-        if mode == "file_search":
-            # Managed RAG: retrieval otomatis dari File Search Store.
+        if mode in ["file_search", "vertex_rag"]:
+            # Managed RAG: retrieval otomatis dari File Search Store atau Vertex RAG
             response = await client.aio.models.generate_content(
                 model=MODEL_CORE,
                 contents=user_text,
@@ -153,7 +159,7 @@ async def match_laws(
                         + locale_instruction(locale)
                     ),
                     temperature=0.1,  # Tingkat kreativitas rendah untuk akurasi sitasi
-                    tools=corpus_tools(),
+                    tools=corpus_tools() if mode == "file_search" else corpus_tools_vertex(),
                 ),
             )
             raw = parse_json_response(response.text)

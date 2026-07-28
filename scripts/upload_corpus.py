@@ -19,9 +19,10 @@ Dua mode:
      Hasil: URI file → isi ke GEMINI_CORPUS_FILE_URI.
 
 Cara pakai (dari root proyek, setelah mengisi backend_python/.env):
-    python scripts/upload_corpus.py [path_pdf] [--mode store|file]
+    python scripts/upload_corpus.py [path_pdf_or_folder_or_gcs_uri] [--mode store|file|vertex-rag]
 
-Default path_pdf: docs/UU_Ketenagakerjaan_Embedding.pdf
+Default path: Law_file
+Jika menggunakan mode vertex-rag, argumen pertama bisa berupa GCS URI, misal: gs://bucket-anda/Law_file/
 """
 
 import argparse
@@ -39,7 +40,7 @@ load_dotenv(os.path.join(_ROOT, "backend_python", ".env"))
 load_dotenv(os.path.join(_ROOT, ".env.local"))
 
 _API_KEY = os.getenv("GEMINI_API_KEY")
-_DEFAULT_PDF = os.path.join(_ROOT, "docs", "UU_Ketenagakerjaan_Embedding.pdf")
+_DEFAULT_PDF = os.path.join(_ROOT, "Law_file")
 
 
 def upload_to_store(client: genai.Client, path: str) -> None:
@@ -134,6 +135,60 @@ def upload_as_file(client: genai.Client, path: str) -> None:
     print("=" * 64)
 
 
+def upload_to_vertex_rag(project: str, location: str, gcs_uri: str) -> None:
+    """Mode vertex-rag: Membuat RagCorpus di Vertex AI menggunakan vertexai SDK."""
+    try:
+        import vertexai
+        from vertexai.preview import rag
+    except ImportError:
+        print("ERROR: Pastikan 'google-cloud-aiplatform' terinstal. (pip install google-cloud-aiplatform)", file=sys.stderr)
+        sys.exit(1)
+
+    print(f"Menginisialisasi Vertex AI (Project: {project}, Location: {location})...")
+    vertexai.init(project=project, location=location)
+
+    print("1/2 Membuat Vertex AI RagCorpus...")
+    try:
+        corpus = rag.create_corpus(display_name="kawalkontrak-uu-ketenagakerjaan")
+        print(f"    RagCorpus berhasil dibuat: {corpus.name}")
+    except Exception as e:
+        print(f"ERROR gagal membuat RagCorpus: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    print("2/2 Mengimpor file PDF dari GCS...")
+    
+    if not gcs_uri.startswith("gs://"):
+        # Jika user tidak memasukkan gs://, kita beri contoh bucket default,
+        # tapi idealnya user harus memasukkan gs:// URI mereka.
+        print(f"    Peringatan: {gcs_uri} bukan GCS URI yang valid.")
+        gcs_uri = "gs://kawalkontrak-corpus-bucket/Law_file/"
+        print(f"    Menggunakan default GCS URI: {gcs_uri}")
+
+    print(f"    Mengimpor dari: {gcs_uri}")
+    print("    (Proses ini mungkin memakan waktu beberapa menit...)")
+    try:
+        response = rag.import_files(
+            corpus_name=corpus.name,
+            paths=[gcs_uri],
+            chunk_size=1024,
+            chunk_overlap=200,
+        )
+        print(f"    Selesai! Diimpor: {response.imported_rag_files_count} file.")
+        if getattr(response, 'failed_rag_files_count', 0) > 0:
+            print(f"    PERINGATAN: {response.failed_rag_files_count} file gagal diimpor.")
+    except Exception as e:
+        print(f"ERROR gagal mengimpor file: {e}", file=sys.stderr)
+        print("Pastikan Anda sudah mengunggah folder Law_file ke GCS (gs://kawalkontrak-corpus-bucket/).")
+        sys.exit(1)
+
+    print()
+    print("=" * 64)
+    print("BERHASIL. Tambahkan baris berikut ke backend_python/.env:")
+    print()
+    print(f"    VERTEX_RAG_CORPUS={corpus.name}")
+    print("    GOOGLE_GENAI_USE_VERTEXAI=true")
+    print("=" * 64)
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Upload corpus regulasi ke Gemini")
     parser.add_argument(
@@ -144,13 +199,13 @@ def main() -> None:
     )
     parser.add_argument(
         "--mode",
-        choices=["store", "file"],
+        choices=["store", "file", "vertex-rag"],
         default="store",
-        help="store = File Search Store persisten (default); file = File API 48 jam",
+        help="store = File Search Store (default); file = File API; vertex-rag = Vertex AI RAG",
     )
     args = parser.parse_args()
 
-    if not _API_KEY:
+    if args.mode != "vertex-rag" and not _API_KEY:
         print(
             "ERROR: GEMINI_API_KEY tidak ditemukan.\n"
             "Isi backend_python/.env terlebih dahulu (lihat .env.example).",
@@ -158,16 +213,23 @@ def main() -> None:
         )
         sys.exit(1)
 
-    if not os.path.exists(args.path):
+    if not args.path.startswith("gs://") and not os.path.exists(args.path):
         print(f"ERROR: Path tidak ditemukan: {args.path}", file=sys.stderr)
         sys.exit(1)
 
-    client = genai.Client(api_key=_API_KEY)
-
-    if args.mode == "store":
-        upload_to_store(client, args.path)
+    if args.mode == "vertex-rag":
+        project = os.getenv("GOOGLE_CLOUD_PROJECT")
+        location = os.getenv("GOOGLE_CLOUD_LOCATION", "asia-southeast1")
+        if not project:
+            print("ERROR: GOOGLE_CLOUD_PROJECT wajib di-set untuk mode vertex-rag.", file=sys.stderr)
+            sys.exit(1)
+        upload_to_vertex_rag(project, location, args.path)
     else:
-        upload_as_file(client, args.path)
+        client = genai.Client(api_key=_API_KEY)
+        if args.mode == "store":
+            upload_to_store(client, args.path)
+        else:
+            upload_as_file(client, args.path)
 
 
 if __name__ == "__main__":

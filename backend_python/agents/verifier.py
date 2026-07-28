@@ -30,7 +30,13 @@ from google import genai
 from google.genai import types
 from pydantic import TypeAdapter
 
-from backend_python.config import MODEL_CORE, corpus_mode, corpus_parts, corpus_tools
+from backend_python.config import (
+    MODEL_CORE,
+    corpus_mode,
+    corpus_parts,
+    corpus_tools,
+    corpus_tools_vertex,
+)
 from backend_python.models import RedFlagDraft, VerificationResult
 from backend_python.utils import locale_instruction, parse_json_response
 
@@ -114,7 +120,7 @@ async def verify_red_flags(
     user_text = f"Audit temuan red flag hukum berikut:\n\n{payload}"
 
     try:
-        if mode == "file_search":
+        if mode in ["file_search", "vertex_rag"]:
             response = await client.aio.models.generate_content(
                 model=MODEL_CORE,
                 contents=user_text,
@@ -126,7 +132,7 @@ async def verify_red_flags(
                         + locale_instruction(locale)
                     ),
                     temperature=0.1,  # Sangat deterministik untuk audit
-                    tools=corpus_tools(),
+                    tools=corpus_tools() if mode == "file_search" else corpus_tools_vertex(),
                 ),
             )
             raw = parse_json_response(response.text)

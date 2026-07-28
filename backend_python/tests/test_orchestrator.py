@@ -15,10 +15,10 @@ import pytest
 
 from backend_python import cache
 from backend_python.orchestrator import (
-    _build_fallback_result,
     _sha256,
     _stage_event,
 )
+from backend_python.results import build_fallback_result
 
 
 # ─── Setup ────────────────────────────────────────────────────────────────────
@@ -74,35 +74,35 @@ class TestStageEvent:
 class TestFallbackResult:
     def test_fallback_has_failed_status(self):
         """Fallback result selalu punya status='failed'."""
-        result = _build_fallback_result("teks kontrak", locale="id")
+        result = build_fallback_result(_sha256("teks kontrak"), locale="id")
         assert result.status == "failed"
 
     def test_fallback_has_no_red_flags(self):
-        """Fallback result tidak punya red flag (tidak menampilkan temuan palsu)."""
-        result = _build_fallback_result("teks kontrak", locale="id")
+        """Fallback result tidak boleh berisi red flag."""
+        result = build_fallback_result(_sha256("teks kontrak"), locale="id")
         assert result.red_flags == []
         assert result.klausul_aman == []
 
     def test_fallback_id_starts_with_an_fallback(self):
         """Fallback result ID dimulai dengan 'AN-FALLBACK-'."""
-        result = _build_fallback_result("teks kontrak", locale="id")
+        result = build_fallback_result(_sha256("teks kontrak"), locale="id")
         assert result.id.startswith("AN-FALLBACK-")
 
     def test_fallback_contract_hash_matches_input(self):
         """Fallback result hash sesuai kontrak yang gagal diproses."""
         text = "kontrak gagal diproses"
-        result = _build_fallback_result(text, locale="id")
+        result = build_fallback_result(_sha256(text), locale="id")
         assert result.contract_hash == _sha256(text)
 
     def test_fallback_en_locale(self):
-        """Fallback result untuk locale 'en' menggunakan teks bahasa Inggris."""
-        result = _build_fallback_result("contract", locale="en")
+        """Pastikan lokalisasi bahasa Inggris pada fallback bekerja."""
+        result = build_fallback_result(_sha256("contract"), locale="en")
         assert "failed" in result.ringkasan.status.lower()
         assert "LBH" in result.disclaimer  # disclaimer selalu menyebut LBH
 
     def test_fallback_metadata_engine_is_pipeline_failed(self):
         """Fallback metadata menandai engine='pipeline-failed' untuk monitoring."""
-        result = _build_fallback_result("teks", locale="id")
+        result = build_fallback_result(_sha256("teks"), locale="id")
         assert result.metadata.engine == "pipeline-failed"
         assert result.metadata.rag_enabled is False
 
@@ -133,7 +133,6 @@ class TestCacheIntegration:
         # Jalankan stream — harus mengembalikan cache hit event
         events = asyncio.run(_collect_stream(run_analysis_pipeline_stream(
             contract_text=contract,
-            api_key="dummy-key-not-called",
             locale="id",
         )))
 
@@ -157,7 +156,6 @@ class TestCacheIntegration:
 
         events = asyncio.run(_collect_stream(run_analysis_pipeline_stream(
             contract_text=contract,
-            api_key="dummy",
             locale="id",
         )))
 
