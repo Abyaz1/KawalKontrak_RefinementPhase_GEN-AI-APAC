@@ -52,7 +52,7 @@ SHARED_SECRET: str | None = os.getenv("BACKEND_SHARED_SECRET") or None
 # ── Pemilihan Model (sesuai TRD §3: model termurah sebagai default) ──────────
 
 MODEL_LITE = os.getenv("KK_MODEL_LITE", "gemini-2.5-flash")
-MODEL_CORE: str = os.getenv("KK_MODEL_CORE", "gemini-2.5-flash")
+MODEL_CORE: str = os.getenv("KK_MODEL_CORE", "gemini-2.5-pro")
 
 IS_PRODUCTION: bool = os.getenv("K_SERVICE") is not None or os.getenv("ENV") == "production"
 

@@ -16,6 +16,10 @@ import asyncio
 import json
 import os
 
+# Paksa gunakan gemini-2.5-flash untuk pengujian agar tidak terkena limit kuota 0 RPM pro model di free tier
+os.environ["KK_MODEL_CORE"] = "gemini-2.5-flash"
+os.environ["KK_MODEL_LITE"] = "gemini-2.5-flash"
+
 import pytest
 
 from backend_python import config
