@@ -1,10 +1,36 @@
 steps:
   # 1. Build image Docker
+  #
+  # Ketujuh --build-arg di bawah wajib ada. NEXT_PUBLIC_* di-inline ke bundle
+  # JavaScript saat `next build`, bukan dibaca saat runtime, sehingga env var
+  # Cloud Run (yang runtime-only) tidak pernah sampai ke browser. Dockerfile
+  # sudah menyediakan ARG-nya dengan default string kosong; tanpa diteruskan
+  # dari sini, `firebaseEnabled` di src/lib/firebase.ts selalu false dan tombol
+  # login hilang di produksi tanpa error maupun log.
+  #
+  # Nilai Firebase Web ini BUKAN rahasia — memang dikirim ke setiap browser di
+  # dalam bundle, dan pengamanannya bersandar pada Firestore rules serta
+  # Authorized Domains, bukan pada kerahasiaan apiKey. Jadi tempatnya di
+  # substitusi trigger, bukan Secret Manager.
   - name: gcr.io/cloud-builders/docker
     args:
       - build
       - '-t'
       - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/frontend:latest'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_API_KEY=${_NEXT_PUBLIC_FIREBASE_API_KEY}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${_NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_PROJECT_ID=${_NEXT_PUBLIC_FIREBASE_PROJECT_ID}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${_NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${_NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_FIREBASE_APP_ID=${_NEXT_PUBLIC_FIREBASE_APP_ID}'
+      - '--build-arg'
+      - 'NEXT_PUBLIC_APP_URL=${_NEXT_PUBLIC_APP_URL}'
       - '-f'
       - Dockerfile
       - .
@@ -23,6 +49,23 @@ steps:
 
 images:
   - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/frontend:latest'
+
+# Nilai sebenarnya diisi di trigger Cloud Build (Console → Triggers → Edit →
+# Substitution variables), diambil dari Firebase Console → Project Settings →
+# General → Your apps → SDK setup and configuration.
+#
+# Default string kosong di sini disengaja: build tetap berhasil tanpa nilai,
+# persis seperti perilaku CI tanpa kredensial — hanya saja fitur login mati.
+# Jadi kalau tombol login hilang di produksi, yang pertama dicek adalah apakah
+# ketujuh substitusi ini benar-benar terisi di trigger.
+substitutions:
+  _NEXT_PUBLIC_FIREBASE_API_KEY: ''
+  _NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ''
+  _NEXT_PUBLIC_FIREBASE_PROJECT_ID: ''
+  _NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ''
+  _NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ''
+  _NEXT_PUBLIC_FIREBASE_APP_ID: ''
+  _NEXT_PUBLIC_APP_URL: ''
 
 options:
   logging: CLOUD_LOGGING_ONLY

@@ -39,6 +39,28 @@ if (firebaseEnabled) {
   googleProvider = new GoogleAuthProvider();
   // Always prompt for account selection when logging in via Google
   googleProvider.setCustomParameters({ prompt: 'select_account' });
+} else if (process.env.NODE_ENV !== 'production') {
+  /* Tanpa peringatan ini, konfigurasi yang hilang tidak menimbulkan gejala apa
+     pun selain tombol "Masuk" yang lenyap dari header — Header.tsx memang
+     menyembunyikannya lewat `authAvailable`. Gejalanya mudah dikira bug UI,
+     padahal penyebabnya .env.local yang belum dibuat. Sengaja hanya di
+     development: di produksi ini tidak berguna bagi pengguna akhir. */
+  const missing = (
+    [
+      ['NEXT_PUBLIC_FIREBASE_API_KEY', firebaseConfig.apiKey],
+      ['NEXT_PUBLIC_FIREBASE_PROJECT_ID', firebaseConfig.projectId],
+    ] as const
+  )
+    .filter(([, value]) => !value)
+    .map(([name]) => name);
+
+  console.warn(
+    `[KawalKontrak] Firebase tidak dikonfigurasi (${missing.join(', ')} kosong). ` +
+      'Login Google dimatikan dan tombol "Masuk" disembunyikan dari header. ' +
+      'Salin .env.example ke .env.local, isi nilai NEXT_PUBLIC_FIREBASE_* dari ' +
+      'Firebase Console, lalu jalankan ulang dev server (nilai NEXT_PUBLIC_* ' +
+      'dibaca saat build, hot reload tidak cukup).',
+  );
 }
 
 export { app, auth, db, googleProvider };
