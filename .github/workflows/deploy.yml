@@ -26,8 +26,9 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # Dockerfile backend sekarang berada di backend_python/Dockerfile
       - name: Prepare Dockerfile
-        run: cp Dockerfile.backend Dockerfile
+        run: cp backend_python/Dockerfile Dockerfile
 
       - name: Build and Push Backend Image
         run: |
@@ -39,7 +40,7 @@ jobs:
           gcloud run deploy kawalkontrak-backend \
             --image asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/backend:latest \
             --region ${{ env.REGION }} \
-            --update-env-vars BACKEND_SHARED_SECRET="kawalkontrak-rahasia-2026",GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=kawalkontrak-genaiapac,GOOGLE_CLOUD_LOCATION=asia-southeast1,VERTEX_RAG_CORPUS=projects/332798833015/locations/asia-southeast1/ragCorpora/6917529027641081856
+            --update-env-vars BACKEND_SHARED_SECRET="${{ secrets.BACKEND_SHARED_SECRET }}",GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT="${{ env.PROJECT_ID }}",GOOGLE_CLOUD_LOCATION="${{ env.REGION }}",VERTEX_RAG_CORPUS="${{ secrets.VERTEX_RAG_CORPUS }}"
 
   deploy-frontend:
     name: Deploy Frontend
@@ -58,8 +59,9 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
+      # Dockerfile frontend sekarang langsung berada di root (Dockerfile)
       - name: Prepare Dockerfile
-        run: cp Dockerfile.frontend Dockerfile
+        run: echo "Using root Dockerfile directly"
 
       - name: Build and Push Frontend Image
         run: |
@@ -72,4 +74,4 @@ jobs:
             --image asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/frontend:latest \
             --region ${{ env.REGION }} \
             --allow-unauthenticated \
-            --set-env-vars PYTHON_BACKEND_URL="https://kawalkontrak-backend-332798833015.asia-southeast1.run.app",BACKEND_SHARED_SECRET="kawalkontrak-rahasia-2026"
+            --set-env-vars PYTHON_BACKEND_URL="${{ secrets.PYTHON_BACKEND_URL }}",BACKEND_SHARED_SECRET="${{ secrets.BACKEND_SHARED_SECRET }}"

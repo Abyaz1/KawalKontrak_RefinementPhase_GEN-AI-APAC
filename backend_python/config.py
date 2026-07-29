@@ -54,6 +54,8 @@ SHARED_SECRET: str | None = os.getenv("BACKEND_SHARED_SECRET") or None
 MODEL_LITE = os.getenv("KK_MODEL_LITE", "gemini-2.5-flash")
 MODEL_CORE: str = os.getenv("KK_MODEL_CORE", "gemini-2.5-flash")
 
+IS_PRODUCTION: bool = os.getenv("K_SERVICE") is not None or os.getenv("ENV") == "production"
+
 
 def file_search_supported() -> bool:
     """True jika versi SDK google-genai mendukung File Search tool."""
@@ -150,10 +152,9 @@ def validate_config() -> list[str]:
             "Upgrade: pip install -U google-genai"
         )
 
-    is_production = os.getenv("K_SERVICE") is not None or os.getenv("ENV") == "production"
     if not SHARED_SECRET:
         msg = "BACKEND_SHARED_SECRET tidak di-set — endpoint backend terbuka tanpa otentikasi."
-        if is_production:
+        if IS_PRODUCTION:
             problems.append(f"{msg} Wajib di-set untuk production.")
         else:
             logger.warning(f"{msg} Set secret untuk production.")
