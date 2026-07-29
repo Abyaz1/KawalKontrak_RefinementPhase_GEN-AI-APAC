@@ -2,7 +2,7 @@
 
 **KawalKontrak.ai** is an AI-powered platform that analyzes employment contracts for Indonesian workers. It detects "red flags" (harmful clauses) in employment contracts (PKWT, PKWTT) by cross-referencing them against Indonesian Labor Law (UU No. 6/2023, PP No. 35/2021, PP No. 36/2021) using a **multi-agent pipeline** with **managed RAG (Gemini File Search)**.
 
-> 📄 Related docs: [PRD](PRD_KawalKontrak_AI.md) · [TRD](TRD_KawalKontrak_AI.md) · [Audit Report](AUDIT_REPORT.md) · [Implementation Report](IMPLEMENTATION_REPORT.md)
+
 
 ## 🚀 Features
 

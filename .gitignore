@@ -54,8 +54,6 @@ AGENT_CONTEXT.md
 # Hapus baris ini bila memang ingin ikut dipublikasikan.
 KAWALKONTRAK_LEGAL_BRIEF.md
 
-# docs folder
-
 # Python
 __pycache__/
 *.py[cod]
