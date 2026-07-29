@@ -120,8 +120,6 @@ async def lifespan(app: FastAPI):
 
 # ── FastAPI App ───────────────────────────────────────────────────────────────
 
-is_prod = os.getenv("ENVIRONMENT") == "production"
-
 app = FastAPI(
     title="KawalKontrak.ai — AI Backend",
     description=(
@@ -130,9 +128,9 @@ app = FastAPI(
     ),
     version="3.0.0",
     lifespan=lifespan,
-    docs_url=None if is_prod else "/docs",
-    redoc_url=None if is_prod else "/redoc",
-    openapi_url=None if is_prod else "/openapi.json",
+    docs_url=None if config.IS_PRODUCTION else "/docs",
+    redoc_url=None if config.IS_PRODUCTION else "/redoc",
+    openapi_url=None if config.IS_PRODUCTION else "/openapi.json",
 )
 
 cors_origins_env = os.getenv("CORS_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
@@ -161,7 +159,9 @@ async def shared_secret_middleware(request: Request, call_next):
     kecuali untuk endpoint publik (/health, /) atau jika secret tidak
     dikonfigurasi (mode development).
     """
-    public_paths = {"/", "/health", "/docs", "/openapi.json"}
+    public_paths = {"/", "/health"}
+    if not config.IS_PRODUCTION:
+        public_paths.update({"/docs", "/openapi.json", "/redoc"})
     if config.SHARED_SECRET and request.url.path not in public_paths:
         provided = request.headers.get("x-backend-secret", "")
         if provided != config.SHARED_SECRET:
