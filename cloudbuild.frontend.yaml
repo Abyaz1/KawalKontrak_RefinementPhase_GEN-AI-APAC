@@ -9,3 +9,5 @@ steps:
       - .
 images:
   - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/frontend:latest'
+options:
+  logging: CLOUD_LOGGING_ONLY
