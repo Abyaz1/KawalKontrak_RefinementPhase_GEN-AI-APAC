@@ -44,6 +44,16 @@ next-env.d.ts
 .agents/
 AGENT_CONTEXT.md
 
+# Claude Code: konfigurasi lokal per-developer (berisi path mesin sendiri).
+# .claude/launch.json sengaja TIDAK diabaikan supaya setup dev server ikut
+# terbagi ke anggota tim lain.
+.claude/settings.local.json
+
+# Brief internal untuk asisten AI: memuat daftar lengkap cacat sistem yang
+# diketahui, ditulis untuk konsumsi tim sendiri, bukan publik.
+# Hapus baris ini bila memang ingin ikut dipublikasikan.
+KAWALKONTRAK_LEGAL_BRIEF.md
+
 # docs folder
 
 # Python

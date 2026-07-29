@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { useI18n } from '@/lib/i18n';
 import { useTheme } from '@/lib/theme';
 import { useAuth } from '@/context/AuthContext';
+import { SunIcon, MoonIcon, GlobeIcon } from '@/components/Icons';
 import s from './Header.module.css';
 
 export function Header() {
@@ -94,8 +95,8 @@ export function Header() {
               title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
             >
               <div className={s.themeToggleTrack}>
-                <span className={s.themeIconLight}>☀️</span>
-                <span className={s.themeIconDark}>🌙</span>
+                <span className={s.themeIconLight}><SunIcon /></span>
+                <span className={s.themeIconDark}><MoonIcon /></span>
                 <div className={`${s.themeToggleThumb} ${theme === 'dark' ? s.themeToggleThumbDark : ''}`} />
               </div>
             </button>
@@ -196,10 +197,16 @@ export function Header() {
 
         <div className={s.mobileControls}>
           <button onClick={toggleTheme} className={s.mobileControlBtn}>
-            {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
+            {theme === 'dark' ? (
+              <SunIcon className={`icon-inline ${s.mobileSunIcon}`} />
+            ) : (
+              <MoonIcon className="icon-inline" />
+            )}
+            {theme === 'dark' ? 'Light' : 'Dark'}
           </button>
           <button onClick={toggleLocale} className={s.mobileControlBtn}>
-            🌐 {locale === 'id' ? 'English' : 'Indonesia'}
+            <GlobeIcon className="icon-inline" />
+            {locale === 'id' ? 'English' : 'Indonesia'}
           </button>
         </div>
 

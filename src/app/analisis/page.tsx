@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect, DragEvent, ChangeEvent } from 'react';
+import Link from 'next/link';
 import { Footer } from '@/components/Footer';
 import { Header } from '@/components/Header';
 import { useI18n } from '@/lib/i18n';
@@ -12,6 +13,30 @@ import { UMK_REGIONS } from '@/lib/umk-database';
 import { DEMO_CONTRACT_RISKY, DEMO_CONTRACT_FAIR } from '@/lib/demo-contracts';
 import { useAuth } from '@/context/AuthContext';
 import { saveContractAnalysis, getUserAnalyses, deleteUserAnalysis } from '@/lib/firebase-db';
+import { ConsentGate } from '@/components/ConsentGate';
+import {
+  AlertTriangleIcon,
+  CameraIcon,
+  CheckIcon,
+  ChipIcon,
+  CircleCheckIcon,
+  CircleCrossIcon,
+  ClipboardIcon,
+  CloseIcon,
+  FileTextIcon,
+  FolderOpenIcon,
+  HelpCircleIcon,
+  HistoryIcon,
+  HourglassIcon,
+  ImageIcon,
+  InfoIcon,
+  LightbulbIcon,
+  ScissorsIcon,
+  SearchIcon,
+  ShieldAlertIcon,
+  SpinnerIcon,
+  TrashIcon,
+} from '@/components/Icons';
 import s from './page.module.css';
 
 /* ──────────────── Types ──────────────── */
@@ -134,6 +159,28 @@ Article 2 - Working Hours
 The Second Party is required to work 10 hours per day, 7 days a week...
 
 Paste your entire employment contract text here...`;
+
+/* Panduan memotret kontrak (FR-10). `ok: false` = hal yang harus dihindari. */
+interface PhotoTip {
+  ok: boolean;
+  text: string;
+}
+
+const PHOTO_TIPS_ID: PhotoTip[] = [
+  { ok: true, text: 'Foto tegak lurus dari atas, seluruh halaman terlihat' },
+  { ok: true, text: 'Pencahayaan terang dan merata (tanpa bayangan)' },
+  { ok: true, text: 'Teks tajam: cek dulu apakah bisa Anda baca sendiri' },
+  { ok: false, text: 'Hindari foto miring, buram, atau terpotong' },
+  { ok: false, text: 'Hindari pantulan cahaya/flash pada kertas' },
+];
+
+const PHOTO_TIPS_EN: PhotoTip[] = [
+  { ok: true, text: 'Shoot straight from above, whole page visible' },
+  { ok: true, text: 'Bright, even lighting (no shadows)' },
+  { ok: true, text: 'Sharp text: check you can read it yourself first' },
+  { ok: false, text: 'Avoid tilted, blurry, or cropped photos' },
+  { ok: false, text: 'Avoid light/flash glare on the paper' },
+];
 
 /* ──────────────── History type ──────────────── */
 
@@ -281,7 +328,20 @@ function buildHighlightSegments(
 
 /* ──────────────── Component ──────────────── */
 
+/**
+ * Halaman analisis dibungkus gerbang persetujuan: pengguna wajib menyetujui
+ * Syarat Layanan, Disclaimer, dan Kebijakan Privasi sebelum boleh memakainya.
+ * Menolak akan mengembalikan pengguna ke halaman utama.
+ */
 export default function AnalisisPage() {
+  return (
+    <ConsentGate declineHref="/">
+      <AnalisisWorkspace />
+    </ConsentGate>
+  );
+}
+
+function AnalisisWorkspace() {
   const { t, locale } = useI18n();
   const { user } = useAuth();
 
@@ -350,7 +410,7 @@ export default function AnalisisPage() {
               await saveContractAnalysis(user.uid, entry);
             }
             localStorage.removeItem(HISTORY_KEY);
-            showToast(locale === 'id' ? '🔄 Riwayat disinkronkan ke akun Anda!' : '🔄 History synced to your account!');
+            showToast(locale === 'id' ? 'Riwayat disinkronkan ke akun Anda!' : 'History synced to your account!');
           }
 
           // 2. Fetch history from Firestore
@@ -727,14 +787,14 @@ export default function AnalisisPage() {
     if (user) {
       try {
         await deleteUserAnalysis(user.uid, id);
-        showToast(locale === 'id' ? '🗑️ Riwayat dihapus dari cloud' : '🗑️ History deleted from cloud');
+        showToast(locale === 'id' ? 'Riwayat dihapus dari cloud' : 'History deleted from cloud');
       } catch (err) {
         console.error('Gagal menghapus riwayat dari Firestore:', err);
-        showToast(locale === 'id' ? '❌ Gagal menghapus riwayat cloud' : '❌ Failed to delete cloud history');
+        showToast(locale === 'id' ? 'Gagal menghapus riwayat cloud' : 'Failed to delete cloud history');
       }
     } else {
       saveHistory(updated);
-      showToast(locale === 'id' ? '🗑️ Riwayat dihapus' : '🗑️ Entry deleted');
+      showToast(locale === 'id' ? 'Riwayat dihapus' : 'Entry deleted');
     }
   }, [history, user, locale, showToast]);
 
@@ -746,14 +806,14 @@ export default function AnalisisPage() {
       try {
         const deletePromises = history.map((item) => deleteUserAnalysis(user.uid, item.id));
         await Promise.all(deletePromises);
-        showToast(locale === 'id' ? '🗑️ Semua riwayat akun dihapus' : '🗑️ All account history cleared');
+        showToast(locale === 'id' ? 'Semua riwayat akun dihapus' : 'All account history cleared');
       } catch (err) {
         console.error('Gagal membersihkan riwayat dari Firestore:', err);
-        showToast(locale === 'id' ? '❌ Gagal membersihkan riwayat cloud' : '❌ Failed to clear cloud history');
+        showToast(locale === 'id' ? 'Gagal membersihkan riwayat cloud' : 'Failed to clear cloud history');
       }
     } else {
       localStorage.removeItem(HISTORY_KEY);
-      showToast(locale === 'id' ? '🗑️ Semua riwayat lokal dihapus' : '🗑️ All local history cleared');
+      showToast(locale === 'id' ? 'Semua riwayat lokal dihapus' : 'All local history cleared');
     }
   }, [history, user, locale, showToast]);
 
@@ -944,7 +1004,8 @@ export default function AnalisisPage() {
               onClick={() => setInputTab('photo')}
               type="button"
             >
-              📷 {t.analysis_tab_photo}
+              <CameraIcon className="icon-inline icon-lead" />
+              {t.analysis_tab_photo}
             </button>
           </div>
 
@@ -978,7 +1039,7 @@ export default function AnalisisPage() {
                   if (e.key === 'Enter' || e.key === ' ') fileInputRef.current?.click();
                 }}
               >
-                <div className={s.dropZoneIcon}>📂</div>
+                <div className={s.dropZoneIcon}><FolderOpenIcon /></div>
                 <div className={s.dropZoneText}>
                   {t.analysis_drop_title}
                 </div>
@@ -998,7 +1059,7 @@ export default function AnalisisPage() {
 
               {file && (
                 <div className={s.filePreview}>
-                  <span>📄</span>
+                  <FileTextIcon className={s.filePreviewIcon} />
                   <span className={s.filePreviewName}>{file.name}</span>
                   <span className={s.filePreviewSize}>{formatFileSize(file.size)}</span>
                   <button
@@ -1012,14 +1073,15 @@ export default function AnalisisPage() {
                     aria-label={locale === 'id' ? 'Hapus file' : 'Remove file'}
                     type="button"
                   >
-                    ✕
+                    <CloseIcon />
                   </button>
                 </div>
               )}
 
               {fileError && (
                 <div role="alert" className={s.inlineError}>
-                  ⚠️ {fileError}
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  {fileError}
                 </div>
               )}
             </>
@@ -1030,25 +1092,20 @@ export default function AnalisisPage() {
             <>
               {/* Panduan foto (FR-10) — tampil SEBELUM upload */}
               <div className={s.photoGuide}>
-                <div className={s.photoGuideTitle}>💡 {t.analysis_photo_guide_title}</div>
+                <div className={s.photoGuideTitle}>
+                  <LightbulbIcon className="icon-inline icon-lead" />
+                  {t.analysis_photo_guide_title}
+                </div>
                 <ul className={s.photoGuideList}>
-                  {(locale === 'id'
-                    ? [
-                        '✅ Foto tegak lurus dari atas, seluruh halaman terlihat',
-                        '✅ Pencahayaan terang dan merata (tanpa bayangan)',
-                        '✅ Teks tajam — cek dulu apakah bisa Anda baca sendiri',
-                        '❌ Hindari foto miring, buram, atau terpotong',
-                        '❌ Hindari pantulan cahaya/flash pada kertas',
-                      ]
-                    : [
-                        '✅ Shoot straight from above, whole page visible',
-                        '✅ Bright, even lighting (no shadows)',
-                        '✅ Sharp text — check you can read it yourself first',
-                        '❌ Avoid tilted, blurry, or cropped photos',
-                        '❌ Avoid light/flash glare on the paper',
-                      ]
-                  ).map((tip, i) => (
-                    <li key={i}>{tip}</li>
+                  {(locale === 'id' ? PHOTO_TIPS_ID : PHOTO_TIPS_EN).map((tip, i) => (
+                    <li key={i} className={s.photoGuideItem}>
+                      {tip.ok ? (
+                        <CircleCheckIcon className={s.photoGuideOk} />
+                      ) : (
+                        <CircleCrossIcon className={s.photoGuideAvoid} />
+                      )}
+                      <span>{tip.text}</span>
+                    </li>
                   ))}
                 </ul>
               </div>
@@ -1063,7 +1120,7 @@ export default function AnalisisPage() {
                   if (e.key === 'Enter' || e.key === ' ') photoInputRef.current?.click();
                 }}
               >
-                <div className={s.dropZoneIcon}>📷</div>
+                <div className={s.dropZoneIcon}><CameraIcon /></div>
                 <div className={s.dropZoneText}>
                   {locale === 'id'
                     ? 'Klik untuk memilih foto kontrak'
@@ -1086,7 +1143,7 @@ export default function AnalisisPage() {
 
               {photoFile && !isTranscribing && (
                 <div className={s.filePreview}>
-                  <span>🖼️</span>
+                  <ImageIcon className={s.filePreviewIcon} />
                   <span className={s.filePreviewName}>{photoFile.name}</span>
                   <span className={s.filePreviewSize}>{formatFileSize(photoFile.size)}</span>
                   <button
@@ -1100,26 +1157,29 @@ export default function AnalisisPage() {
                     aria-label={locale === 'id' ? 'Hapus foto' : 'Remove photo'}
                     type="button"
                   >
-                    ✕
+                    <CloseIcon />
                   </button>
                 </div>
               )}
 
               {isTranscribing && (
                 <div className={s.noticeBox} role="status">
-                  ⏳ {t.analysis_photo_processing}
+                  <HourglassIcon className="icon-inline icon-lead" />
+                  {t.analysis_photo_processing}
                 </div>
               )}
 
               {photoError && (
                 <div role="alert" className={s.inlineError}>
-                  ⚠️ {photoError}
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  {photoError}
                 </div>
               )}
 
               {photoWarning && (
                 <div className={s.noticeBoxWarning} role="alert">
-                  ⚠️ {photoWarning}
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  {photoWarning}
                 </div>
               )}
 
@@ -1156,8 +1216,11 @@ export default function AnalisisPage() {
                 </option>
               ))}
             </select>
-            <div style={{ marginTop: '8px', fontSize: '0.85rem', color: '#854d0e', backgroundColor: '#fef9c3', padding: '8px', borderRadius: '4px' }} role="alert">
-              ⚠️ Data UMK per 2025 (Permenaker No. 16/2024), harap verifikasi ulang ke Kepgub resmi untuk tahun berjalan.
+            <div className={s.noticeBoxWarning} role="alert">
+              <AlertTriangleIcon className="icon-inline icon-lead" />
+              {locale === 'id'
+                ? 'Angka pembanding kami adalah upah minimum tahun 2025 (Permenaker No. 16/2024) dan hanya mencakup 13 kota/kabupaten. Upah minimum direvisi setiap tahun. Jika wilayah Anda tidak ada dalam daftar, atau Anda membaca ini pada 2026 atau setelahnya, angka ini kemungkinan sudah kedaluwarsa. Periksa Keputusan Gubernur terbaru untuk wilayah Anda.'
+                : 'Our comparison figures are 2025 minimum wages (Manpower Ministry Regulation No. 16/2024) and cover only 13 cities/regencies. Minimum wages are revised annually. If your region is not listed, or you are reading this in 2026 or later, these figures are probably out of date. Check the current Governor’s Decree for your region.'}
             </div>
           </div>
 
@@ -1206,7 +1269,8 @@ export default function AnalisisPage() {
                 }}
               >
                 <span style={{ fontWeight: 600, fontSize: 14 }}>
-                  🕘 {t.analysis_history_title}
+                  <HistoryIcon className="icon-inline icon-lead" />
+                  {t.analysis_history_title}
                 </span>
                 <button
                   type="button"
@@ -1272,21 +1336,23 @@ export default function AnalisisPage() {
                     onClick={() => handleDeleteHistory(entry.id)}
                     aria-label={locale === 'id' ? 'Hapus riwayat ini' : 'Delete this entry'}
                     style={{
+                      display: 'inline-flex',
                       background: 'none',
                       border: 'none',
                       cursor: 'pointer',
                       color: 'var(--color-neutral-light, #6B7280)',
                     }}
                   >
-                    ✕
+                    <TrashIcon size={16} />
                   </button>
                 </div>
               ))}
               {user && (
                 <div style={{ fontSize: 11, color: 'var(--color-neutral-light, #6B7280)', marginTop: 4 }}>
+                  <InfoIcon className="icon-inline icon-lead" />
                   {locale === 'id'
-                    ? 'ℹ️ Riwayat berisi kutipan klausul dari kontrak Anda dan tersimpan di akun cloud Anda. Teks kontrak lengkap tidak pernah disimpan.'
-                    : 'ℹ️ History contains clause excerpts from your contract and is stored in your cloud account. The full contract text is never stored.'}
+                    ? 'Riwayat berisi kutipan klausul dari kontrak Anda dan tersimpan di akun cloud Anda. Teks kontrak lengkap tidak pernah disimpan.'
+                    : 'History contains clause excerpts from your contract and is stored in your cloud account. The full contract text is never stored.'}
                 </div>
               )}
             </div>
@@ -1298,7 +1364,7 @@ export default function AnalisisPage() {
           {/* ── Idle / Empty ── */}
           {analysisState === 'idle' && (
             <div className={s.emptyState}>
-              <div className={s.emptyIcon}>📋</div>
+              <div className={s.emptyIcon}><ClipboardIcon strokeWidth={1.3} /></div>
               <h2 className={s.emptyTitle}>{t.analysis_empty_title}</h2>
               <p className={s.emptyText}>
                 {t.analysis_empty_desc}
@@ -1321,7 +1387,7 @@ export default function AnalisisPage() {
                       className={`${s.step} ${done ? s.stepDone : ''} ${active ? s.stepActive : ''}`}
                     >
                       <span className={s.stepIcon}>
-                        {done ? '✓' : active ? '⟳' : `${i + 1}`}
+                        {done ? <CheckIcon /> : active ? <SpinnerIcon /> : `${i + 1}`}
                       </span>
                       <span>{stageLabel(stage.id)}</span>
                     </div>
@@ -1343,7 +1409,7 @@ export default function AnalisisPage() {
           {/* ── Error ── */}
           {analysisState === 'error' && (
             <div className={s.errorState}>
-              <div className={s.errorIcon}>⚠️</div>
+              <div className={s.errorIcon}><AlertTriangleIcon strokeWidth={1.3} /></div>
               <h2 className={s.errorTitle}>{t.analysis_error_title}</h2>
               <p className={s.errorText}>
                 {errorMsg ?? t.analysis_error_desc}
@@ -1369,7 +1435,7 @@ export default function AnalisisPage() {
                 <span
                   className={`${s.engineBadge} ${analysisResult.engine === 'local' ? s.engineBadgeLocal : ''}`}
                 >
-                  {analysisResult.engine === 'local' ? '🔍 ' : '🤖 '}
+                  {analysisResult.engine === 'local' ? <SearchIcon /> : <ChipIcon />}
                   {analysisResult.engine === 'local' ? t.analysis_engine_local : t.analysis_engine_ai}
                   {analysisResult.cached ? ` · ${t.analysis_engine_cached}` : ''}
                 </span>
@@ -1378,12 +1444,14 @@ export default function AnalisisPage() {
               {/* Peringatan integritas hasil */}
               {analysisResult.verifierWarning && (
                 <div className={s.noticeBoxWarning} role="alert">
-                  ⚠️ {t.analysis_verifier_warning}
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  {t.analysis_verifier_warning}
                 </div>
               )}
               {analysisResult.truncatedWarning && (
                 <div className={s.noticeBoxWarning} role="alert">
-                  ✂️ {t.analysis_truncated_warning}
+                  <ScissorsIcon className="icon-inline icon-lead" />
+                  {t.analysis_truncated_warning}
                 </div>
               )}
 
@@ -1476,7 +1544,8 @@ export default function AnalisisPage() {
                   {heroFlag && (
                     <div className={s.criticalHero}>
                       <div className={s.criticalHeroLabel}>
-                        🚨 {t.analysis_most_critical}
+                        <ShieldAlertIcon className="icon-inline icon-lead" />
+                        {t.analysis_most_critical}
                       </div>
                       {renderFlagCard(heroFlag, true)}
                     </div>
@@ -1513,7 +1582,10 @@ export default function AnalisisPage() {
                   <div className={s.noticeBox}>{t.analysis_review_note}</div>
                   {analysisResult.reviewClauses.map((clause) => (
                     <div key={clause.id} className={s.reviewCard}>
-                      <div className={s.reviewTopic}>❓ {clause.topic}</div>
+                      <div className={s.reviewTopic}>
+                        <HelpCircleIcon className="icon-inline icon-lead" />
+                        {clause.topic}
+                      </div>
                       <div className={s.flagExcerpt}>{clause.excerpt}</div>
                       <div className={s.reviewReason}>{clause.reason}</div>
                     </div>
@@ -1616,7 +1688,7 @@ export default function AnalisisPage() {
                           <>
                             <strong>LBH Jakarta:</strong> (021) 3145518
                             <br />
-                            <strong>Posbakum Pengadilan Hubungan Industrial</strong> — Konsultasi gratis
+                            <strong>Posbakum Pengadilan Hubungan Industrial</strong>: Konsultasi gratis
                             bagi pekerja. Kunjungi kantor PHI terdekat di wilayah Anda.
                             <br />
                             <strong>Kemnaker Hotline:</strong> 1500-630
@@ -1625,7 +1697,7 @@ export default function AnalisisPage() {
                           <>
                             <strong>LBH Jakarta:</strong> (021) 3145518
                             <br />
-                            <strong>Court Legal Aid Post (Posbakum PHI)</strong> — Free consultation
+                            <strong>Court Legal Aid Post (Posbakum PHI)</strong>: Free consultation
                             for workers. Visit the nearest PHI office in your region.
                             <br />
                             <strong>Ministry of Manpower Hotline:</strong> 1500-630
@@ -1637,21 +1709,48 @@ export default function AnalisisPage() {
                 </div>
               )}
 
+              {/* ── Peringatan "nol temuan" (selalu tampil bila tidak ada red flag) ── */}
+              {analysisResult.totalFlags === 0 && (
+                <div className={s.noticeBoxWarning} role="alert">
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  <strong>
+                    {locale === 'id'
+                      ? 'Nol temuan bukan berarti kontrak Anda aman.'
+                      : 'Zero findings does not mean your contract is safe.'}
+                  </strong>{' '}
+                  {locale === 'id'
+                    ? 'Hasil kosong bisa berarti kontrak Anda memang relatif bersih, bisa berarti AI melewatkan masalah yang ada, atau analisis gagal di tengah jalan. Kami juga tidak menandai perlindungan yang seharusnya ada tetapi tidak tertulis (BPJS, cuti, kompensasi akhir PKWT). Periksa sendiri apakah hal-hal itu ada di kontrak Anda.'
+                    : 'An empty result may mean your contract really is relatively clean, that the AI missed problems that are there, or that the analysis failed midway. We also do not flag protections that should be present but are absent (social security, leave, end-of-contract compensation). Check for those yourself.'}
+                </div>
+              )}
+
               {/* ── Disclaimer (selalu tampil di setiap hasil) ── */}
-              <div
-                style={{
-                  marginTop: 24,
-                  padding: '14px 16px',
-                  borderRadius: 8,
-                  border: '1px solid var(--color-border, #E5E7EB)',
-                  background: 'var(--color-surface-alt, rgba(107,114,128,0.08))',
-                  fontSize: 13,
-                  lineHeight: 1.6,
-                  color: 'var(--color-neutral-light, #6B7280)',
-                }}
-                role="note"
-              >
-                ⚠️ {analysisResult.disclaimer}
+              <div className={s.resultDisclaimer} role="note">
+                <div className={s.resultDisclaimerTitle}>
+                  <AlertTriangleIcon className="icon-inline icon-lead" />
+                  {locale === 'id' ? 'Ini bukan nasihat hukum.' : 'This is not legal advice.'}
+                </div>
+                <p className={s.resultDisclaimerText}>{analysisResult.disclaimer}</p>
+                <p className={s.resultDisclaimerText}>
+                  {locale === 'id'
+                    ? 'Hasil ini dibuat oleh AI dan bisa keliru atau tidak lengkap. Jangan menandatangani, mengundurkan diri, menuduh pemberi kerja, atau mengajukan pengaduan hanya berdasarkan halaman ini. Untuk kasus nyata, hubungi LBH, Dinas Ketenagakerjaan kabupaten/kota Anda, serikat pekerja Anda, atau seorang advokat.'
+                    : 'This result was produced by AI and may be wrong or incomplete. Do not sign, resign, accuse your employer, or file a complaint on the basis of this page alone. For a real case, contact LBH, your district Manpower Office, your union, or an advocate.'}
+                </p>
+                <p className={s.resultDisclaimerLinks}>
+                  <a href="https://bantuanhukum.or.id" target="_blank" rel="noopener noreferrer">
+                    LBH Indonesia
+                  </a>
+                  <a href="https://kemnaker.go.id" target="_blank" rel="noopener noreferrer">
+                    {locale === 'id' ? 'Kementerian Ketenagakerjaan' : 'Ministry of Manpower'}
+                  </a>
+                  <Link href="/disclaimer">Disclaimer</Link>
+                  <Link href="/syarat">
+                    {locale === 'id' ? 'Syarat Layanan' : 'Terms of Service'}
+                  </Link>
+                  <Link href="/privasi">
+                    {locale === 'id' ? 'Kebijakan Privasi' : 'Privacy Policy'}
+                  </Link>
+                </p>
               </div>
 
               {/* ── Hidden Container for PDF Export ── */}

@@ -5,7 +5,7 @@
    Dasar hukum kenaikan 2025: Permenaker No. 16 Tahun 2024
    (kenaikan upah minimum 6,5% dari nilai 2024).
 
-   ⚠️ PENTING — VERIFIKASI BERKALA & LIMITASI:
+   PENTING — VERIFIKASI BERKALA & LIMITASI:
    1. Angka di bawah dikompilasi dari publikasi Keputusan Gubernur
       masing-masing provinsi. Sebelum rilis produksi, verifikasi ulang
       setiap nilai terhadap Kepgub resmi (jdih.kemenaker.go.id) dan
@@ -180,8 +180,8 @@ export function validateSalaryAgainstUMK(
 
     const warning =
       locale === 'en'
-        ? `⚠️ MINIMUM WAGE WARNING: The detected salary (Rp ${salaryFormatted}) is below the ${umkData.region} ${umkData.year} minimum wage (${umkData.umk_formatted}). Shortfall: Rp ${deficitFormatted}. Under Law No. 6/2023 Article 88 and Government Regulation No. 36/2021, employers are prohibited from paying below the applicable minimum wage.`
-        : `⚠️ PERINGATAN UMK: Gaji yang terdeteksi (Rp ${salaryFormatted}) berada di bawah UMK ${umkData.region} ${umkData.year} (${umkData.umk_formatted}). Kekurangan: Rp ${deficitFormatted}. Berdasarkan UU No. 6 Tahun 2023 Pasal 88 dan PP No. 36/2021, pengusaha dilarang membayar upah di bawah upah minimum.`;
+        ? `MINIMUM WAGE WARNING: The detected salary (Rp ${salaryFormatted}) is below the ${umkData.region} ${umkData.year} minimum wage (${umkData.umk_formatted}). Shortfall: Rp ${deficitFormatted}. Under Law No. 6/2023 Article 88 and Government Regulation No. 36/2021, employers are prohibited from paying below the applicable minimum wage.`
+        : `PERINGATAN UMK: Gaji yang terdeteksi (Rp ${salaryFormatted}) berada di bawah UMK ${umkData.region} ${umkData.year} (${umkData.umk_formatted}). Kekurangan: Rp ${deficitFormatted}. Berdasarkan UU No. 6 Tahun 2023 Pasal 88 dan PP No. 36/2021, pengusaha dilarang membayar upah di bawah upah minimum.`;
 
     return { warning, umk: umkData };
   }

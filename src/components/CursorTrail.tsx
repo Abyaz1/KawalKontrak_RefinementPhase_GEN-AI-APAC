@@ -91,6 +91,11 @@ export function CursorTrail() {
       // ini ia tetap 300x150 default sampai ResizeObserver di bawah
       // menjalankan ulang begitu ukuran sebenarnya tersedia.
       if (w === 0 || h === 0) return;
+      // ResizeObserver di bawah mengamati documentElement, sehingga ikut
+      // terpicu saat halaman sekadar bertambah tinggi (mis. kotak FAQ dibuka).
+      // Viewport-nya sendiri tidak berubah, dan menyetel ulang canvas.width
+      // akan menghapus jejak kursor yang sedang tampil. Jadi berhenti di sini.
+      if (w === width && h === height) return;
       width = w;
       height = h;
       canvas.width = Math.floor(width * dpr);

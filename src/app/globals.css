@@ -354,6 +354,22 @@ p {
   white-space: nowrap;
 }
 
+/* ── Ikon garis sebaris dengan teks ──
+   Dipakai oleh komponen di src/components/Icons.tsx sebagai pengganti emoji.
+   Ikon mewarisi warna teks (currentColor) dan disejajarkan dengan garis dasar. */
+.icon-inline {
+  display: inline-block;
+  flex-shrink: 0;
+  width: 1.05em;
+  height: 1.05em;
+  vertical-align: -0.17em;
+}
+
+/* Varian dengan jarak ke teks yang mengikutinya. */
+.icon-lead {
+  margin-right: 0.45em;
+}
+
 /* ============================================================
    5. DECORATIVE UTILITIES
    ============================================================ */

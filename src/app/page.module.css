@@ -1178,7 +1178,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-xl);
-  align-items: start; /* expanding one card must not stretch its neighbours */
+  /* `stretch` (bawaan grid) menyamakan tinggi ketiga kartu dengan kartu
+     tertinggi, sehingga panjang teks yang berbeda antar kartu — dan antara
+     Bahasa Indonesia dan Inggris — tidak lagi membuat tepinya bergerigi. */
+  align-items: stretch;
 }
 
 /* ---- "Why We Built This" — expandable fact cards ---- */
@@ -1285,7 +1288,10 @@
 }
 
 .factToggleHint {
-  margin-top: var(--space-xs);
+  /* Dipatok ke dasar kartu supaya sisa ruang dari penyamaan tinggi jatuh di
+     antara teks dan petunjuk ini, bukan menggantung di bawahnya. */
+  margin-top: auto;
+  padding-top: var(--space-xs);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-primary);

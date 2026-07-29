@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useI18n } from '@/lib/i18n';
+import { AlertTriangleIcon } from '@/components/Icons';
 import styles from './Footer.module.css';
 
 export function Footer() {
@@ -85,7 +86,8 @@ export function Footer() {
 
         <div className={styles.footerBottom}>
           <p className={styles.footerDisclaimer}>
-            ⚠️ {t.footer_disclaimer}
+            <AlertTriangleIcon className="icon-inline icon-lead" />
+            {t.footer_disclaimer}
           </p>
         </div>
       </div>

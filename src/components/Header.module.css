@@ -237,6 +237,11 @@
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Matahari pada tombol mode di menu mobile memakai oranye yang sama. */
+.mobileSunIcon {
+  color: #f59e0b;
+}
+
 .mobileControlBtn {
   flex: 1;
   height: 44px;
@@ -298,18 +303,36 @@
 
 .themeIconLight,
 .themeIconDark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 11px;
   z-index: 2;
   user-select: none;
-  opacity: 0.6;
+  opacity: 0.8;
   transition: opacity var(--transition-fast);
   width: 18px;
-  text-align: center;
+}
+
+/* Matahari diberi oranye supaya sisi mana yang berarti mode terang langsung
+   terbaca tanpa perlu menebak. */
+.themeIconLight {
+  color: #f59e0b;
+}
+
+.themeIconDark {
+  color: #cbd5e1;
+}
+
+.themeIconLight svg,
+.themeIconDark svg {
+  width: 13px;
+  height: 13px;
 }
 
 .themeToggleTrack:hover .themeIconLight,
 .themeToggleTrack:hover .themeIconDark {
-  opacity: 0.95;
+  opacity: 1;
 }
 
 .themeToggleThumb {

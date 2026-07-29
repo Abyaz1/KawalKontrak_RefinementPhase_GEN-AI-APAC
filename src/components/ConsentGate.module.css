@@ -1,0 +1,350 @@
+/* ============================================================
+   ConsentGate: gerbang persetujuan halaman analisis
+   ============================================================ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8, 13, 28, 0.62);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: consentFadeIn 0.22s ease-out;
+}
+
+@keyframes consentFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.dialog {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 660px;
+  max-height: min(88vh, 860px);
+  overflow: hidden;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl, 18px);
+  box-shadow: 0 24px 64px rgba(8, 13, 28, 0.32);
+  animation: consentRise 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes consentRise {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Kepala ── */
+.head {
+  position: relative;
+  padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.head::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-brand), var(--color-brand-accent));
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-brand-light);
+  margin-bottom: 10px;
+}
+
+.eyebrow svg {
+  width: 14px;
+  height: 14px;
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.28;
+  color: var(--color-dark);
+}
+
+.intro {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.65;
+  color: var(--color-neutral-light);
+}
+
+/* ── Isi yang dapat digulirkan ──
+   Pada layar tinggi, kepala dan kaki dipatok dan hanya bagian ini yang
+   digulirkan. Pada layar pendek/sempit, seluruh dialog yang digulirkan
+   (lihat media query di bawah) agar tombol tidak pernah terpotong. */
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 28px;
+}
+
+.points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.point {
+  display: flex;
+  gap: 14px;
+}
+
+.pointNum {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: var(--color-brand-muted);
+  border: 1px solid var(--color-brand-subtle);
+  color: var(--color-brand-light);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.pointText {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.68;
+  color: var(--color-neutral);
+}
+
+.pointHeading {
+  color: var(--color-dark);
+  font-weight: 700;
+}
+
+.footnote {
+  display: flex;
+  gap: 10px;
+  margin: 20px 0 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--color-border-light);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-neutral-light);
+}
+
+.footnote svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  color: var(--color-success);
+}
+
+/* ── Kaki: centang + tombol ── */
+.foot {
+  padding: 20px 28px 22px;
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--color-neutral);
+}
+
+.check + .check {
+  margin-top: 12px;
+}
+
+.check input {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  accent-color: var(--color-brand);
+  cursor: pointer;
+}
+
+.check a {
+  color: var(--color-brand-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
+}
+
+.check a:hover {
+  color: var(--color-brand);
+}
+
+.checkHint {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.75rem;
+  color: var(--color-neutral-light);
+}
+
+.actions {
+  display: flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.accept {
+  flex: 1;
+  padding: 12px 22px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-brand), var(--color-brand-accent));
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.accept:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.accept:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.decline {
+  padding: 12px 20px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-neutral);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease;
+  white-space: nowrap;
+}
+
+.decline:hover {
+  background: var(--color-bg-alt);
+  color: var(--color-dark);
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  margin-top: 14px;
+  font-size: 0.72rem;
+  color: var(--color-neutral-light);
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 0.75rem;
+  color: var(--color-neutral-light);
+}
+
+/* ── Layar "ditolak" saat mengarahkan kembali ── */
+.leaving {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 52px 28px;
+  text-align: center;
+}
+
+.leaving svg {
+  width: 40px;
+  height: 40px;
+  color: var(--color-neutral-light);
+}
+
+.leavingText {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--color-neutral);
+}
+
+/* Layar pendek atau sempit: ruang yang tersisa untuk daftar poin menjadi
+   terlalu kecil bila kepala dan kaki dipatok, dan tombol berisiko terpotong.
+   Jadikan seluruh dialog satu kolom yang digulirkan. */
+@media (max-width: 560px), (max-height: 760px) {
+  .dialog {
+    overflow-y: auto;
+  }
+
+  .body {
+    flex: 0 0 auto;
+    overflow-y: visible;
+  }
+}
+
+@media (max-width: 560px) {
+  .overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .dialog {
+    max-width: none;
+    max-height: 94vh;
+    border-radius: var(--radius-xl, 18px) var(--radius-xl, 18px) 0 0;
+  }
+
+  .head,
+  .body,
+  .foot {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .accept,
+  .decline {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .overlay,
+  .dialog {
+    animation: none;
+  }
+
+  .accept:hover:not(:disabled) {
+    transform: none;
+  }
+}

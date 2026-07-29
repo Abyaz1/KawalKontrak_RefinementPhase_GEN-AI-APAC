@@ -1,0 +1,482 @@
+/* ============================================================
+   LegalPageContent: tata letak dokumen hukum panjang
+   ============================================================ */
+
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 104px 20px 72px;
+}
+
+/* ── Kepala dokumen ── */
+.docHead {
+  margin-bottom: 28px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-brand-light);
+  margin-bottom: 12px;
+}
+
+.eyebrow svg {
+  width: 15px;
+  height: 15px;
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: clamp(1.75rem, 4vw, 2.4rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  color: var(--color-brand);
+}
+
+.tagline {
+  margin: 0;
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+  line-height: 1.7;
+  color: var(--color-neutral);
+}
+
+/* ── Kartu metadata ── */
+.metaCard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px 24px;
+  margin: 22px 0 0;
+  padding: 18px 20px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-alt);
+}
+
+.metaItem {
+  min-width: 0;
+}
+
+.metaLabel {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--color-neutral-light);
+  margin-bottom: 3px;
+}
+
+.metaValue {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-dark);
+  word-break: break-word;
+}
+
+.metaValue a {
+  color: var(--color-brand-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Pemberitahuan bahasa yang berlaku ── */
+.prevailing {
+  display: flex;
+  gap: 11px;
+  margin: 18px 0 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(234, 179, 8, 0.42);
+  border-radius: var(--radius-md);
+  background: rgba(234, 179, 8, 0.09);
+  font-size: 0.82rem;
+  line-height: 1.62;
+  color: var(--color-neutral);
+}
+
+.prevailing svg {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 2px;
+  color: #b45309;
+}
+
+.prevailing a {
+  color: var(--color-brand-light);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Ringkasan singkat ── */
+.summary {
+  margin: 26px 0 0;
+  padding: 22px 24px;
+  border: 1px solid var(--color-brand-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--color-brand-muted);
+}
+
+.summaryTitle {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-brand);
+}
+
+.summaryList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.summaryList li {
+  display: flex;
+  gap: 10px;
+  font-size: 0.865rem;
+  line-height: 1.62;
+  color: var(--color-neutral);
+}
+
+.summaryList li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-top: 9px;
+  border-radius: 50%;
+  background: var(--color-brand-light);
+}
+
+/* ── Daftar isi ── */
+.toc {
+  margin: 26px 0 0;
+  padding: 20px 24px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.tocTitle {
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-neutral-light);
+}
+
+.tocList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 6px 24px;
+  counter-reset: toc;
+}
+
+.tocList li {
+  counter-increment: toc;
+  font-size: 0.845rem;
+  line-height: 1.55;
+}
+
+.tocList a {
+  color: var(--color-neutral);
+  text-decoration: none;
+}
+
+.tocList a::before {
+  content: counter(toc) '. ';
+  color: var(--color-neutral-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.tocList a:hover {
+  color: var(--color-brand-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Untuk dokumen yang judul bagiannya sudah membawa nomornya sendiri
+   (mis. "Pasal 1: Definisi"), matikan penomoran otomatis daftar isi. */
+.tocListPlain a::before {
+  content: none;
+}
+
+/* ── Badan dokumen ── */
+.sections {
+  margin-top: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+
+.section {
+  scroll-margin-top: 96px;
+}
+
+.sectionHeading {
+  margin: 0 0 12px;
+  padding-bottom: 9px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  color: var(--color-dark);
+}
+
+.sectionNum {
+  color: var(--color-brand-light);
+  font-variant-numeric: tabular-nums;
+  margin-right: 8px;
+}
+
+.paragraph {
+  margin: 0 0 12px;
+  font-size: 0.925rem;
+  line-height: 1.78;
+  color: var(--color-neutral);
+}
+
+.paragraph:last-child {
+  margin-bottom: 0;
+}
+
+.paragraph strong {
+  color: var(--color-dark);
+  font-weight: 650;
+}
+
+.bullets,
+.numbered {
+  margin: 0 0 14px;
+  padding: 0 0 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  list-style: none;
+  counter-reset: legalnum;
+}
+
+.bullets li {
+  display: flex;
+  gap: 11px;
+  font-size: 0.9rem;
+  line-height: 1.72;
+  color: var(--color-neutral);
+}
+
+.bullets li::before {
+  content: '';
+  flex-shrink: 0;
+  width: 5px;
+  height: 5px;
+  margin-top: 10px;
+  border-radius: 50%;
+  background: var(--color-neutral-light);
+}
+
+.numbered li {
+  counter-increment: legalnum;
+  display: flex;
+  gap: 11px;
+  font-size: 0.9rem;
+  line-height: 1.72;
+  color: var(--color-neutral);
+}
+
+.numbered li::before {
+  content: counter(legalnum) '.';
+  flex-shrink: 0;
+  min-width: 20px;
+  font-weight: 650;
+  color: var(--color-brand-light);
+  font-variant-numeric: tabular-nums;
+}
+
+.bullets strong,
+.numbered strong {
+  color: var(--color-dark);
+  font-weight: 650;
+}
+
+/* ── Sub-bagian ── */
+.subsection {
+  margin: 18px 0 0;
+  padding-left: 16px;
+  border-left: 2px solid var(--color-border);
+}
+
+.subHeading {
+  margin: 0 0 8px;
+  font-size: 0.925rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+/* ── Kotak sorotan ── */
+.callout {
+  display: flex;
+  gap: 12px;
+  margin: 14px 0;
+  padding: 14px 16px;
+  border-radius: var(--radius-md);
+  font-size: 0.865rem;
+  line-height: 1.68;
+}
+
+.calloutInfo {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface-alt);
+  color: var(--color-neutral);
+}
+
+.calloutWarning {
+  border: 1px solid rgba(249, 115, 22, 0.4);
+  background: rgba(249, 115, 22, 0.08);
+  color: var(--color-neutral);
+}
+
+.calloutCritical {
+  border: 1px solid rgba(239, 68, 68, 0.42);
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--color-neutral);
+}
+
+.callout svg {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 3px;
+}
+
+.calloutInfo svg { color: var(--color-brand-light); }
+.calloutWarning svg { color: #c2410c; }
+.calloutCritical svg { color: #b91c1c; }
+
+.callout strong {
+  color: var(--color-dark);
+  font-weight: 650;
+}
+
+/* ── Tabel dua kolom ── */
+.tableWrap {
+  margin: 14px 0;
+  overflow-x: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.table {
+  width: 100%;
+  min-width: 420px;
+  border-collapse: collapse;
+  font-size: 0.855rem;
+}
+
+.table th,
+.table td {
+  padding: 11px 14px;
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.6;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.table th {
+  font-weight: 700;
+  color: var(--color-dark);
+  background: var(--color-surface-alt);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  color: var(--color-neutral);
+}
+
+.table tbody td:first-child {
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table a {
+  color: var(--color-brand-light);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ── Navigasi antar dokumen ── */
+.docNav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.docNavLink {
+  padding: 9px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full, 999px);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-neutral);
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.docNavLink:hover {
+  border-color: var(--color-brand-light);
+  color: var(--color-brand-light);
+}
+
+.docNavCurrent {
+  border-color: var(--color-brand);
+  background: var(--color-brand-muted);
+  color: var(--color-brand);
+  cursor: default;
+}
+
+.docNavCurrent:hover {
+  border-color: var(--color-brand);
+  color: var(--color-brand);
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 92px 16px 56px;
+  }
+
+  .summary,
+  .toc {
+    padding: 18px 16px;
+  }
+
+  .metaCard {
+    padding: 16px;
+  }
+}

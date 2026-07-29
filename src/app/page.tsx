@@ -6,6 +6,7 @@ import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { SlideParticles } from "@/components/SlideParticles";
 import { useI18n } from "@/lib/i18n";
+import { AlertTriangleIcon } from "@/components/Icons";
 import styles from './page.module.css';
 
 /* ─── Testimonial / Background Facts Data ─── */
@@ -261,7 +262,8 @@ const privacyPoints = [
 
 export default function HomePage() {
   const { locale, t } = useI18n();
-  const [openFaqs, setOpenFaqs] = useState<number[]>([]);
+  /* Akordeon FAQ: hanya satu jawaban terbuka pada satu waktu. */
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
   const [openFacts, setOpenFacts] = useState<number[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isSliding, setIsSliding] = useState(false);
@@ -284,10 +286,9 @@ export default function HomePage() {
     []
   );
 
+  /* Membuka satu pertanyaan menutup yang sedang terbuka. */
   const toggleFaq = (index: number) => {
-    setOpenFaqs((prev) =>
-      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
-    );
+    setOpenFaq((prev) => (prev === index ? null : index));
   };
 
   const toggleFact = (index: number) => {
@@ -377,7 +378,10 @@ export default function HomePage() {
           <section className={`${styles.hero} ${styles.heroSlide} ${styles.solidSlide}`}>
             <SlideParticles paused={isSliding || currentSlide !== 2} />
             <div className={styles.redFlagsContent}>
-              <span className={styles.redFlagsBadge}>⚠ {sliderCopy.redFlags.badge[locale]}</span>
+              <span className={styles.redFlagsBadge}>
+                <AlertTriangleIcon className="icon-inline" />
+                {sliderCopy.redFlags.badge[locale]}
+              </span>
               <h2 className={styles.redFlagsTitle}>
                 {sliderCopy.redFlags.titleLead[locale]}{' '}
                 <span className={styles.redFlagsTitleAccent}>{sliderCopy.redFlags.titleAccent[locale]}</span>
@@ -575,30 +579,33 @@ export default function HomePage() {
         </div>
 
         <div className={styles.faqContainer}>
-          {localizedFaq.map((faq, index) => (
-            <div
-              key={index}
-              className={`${styles.faqItem} ${openFaqs.includes(index) ? styles.faqItemOpen : ''}`}
-            >
-              <button
-                className={styles.faqQuestion}
-                onClick={() => toggleFaq(index)}
-                aria-expanded={openFaqs.includes(index)}
-              >
-                <span>{faq.question}</span>
-                <span
-                  className={`${styles.faqChevron} ${openFaqs.includes(index) ? styles.faqChevronOpen : ''}`}
-                >
-                  ▼
-                </span>
-              </button>
+          {localizedFaq.map((faq, index) => {
+            const open = openFaq === index;
+            return (
               <div
-                className={`${styles.faqAnswerWrapper} ${openFaqs.includes(index) ? styles.faqAnswerWrapperOpen : ''}`}
+                key={index}
+                className={`${styles.faqItem} ${open ? styles.faqItemOpen : ''}`}
               >
-                <p className={styles.faqAnswer}>{faq.answer}</p>
+                <button
+                  className={styles.faqQuestion}
+                  onClick={() => toggleFaq(index)}
+                  aria-expanded={open}
+                >
+                  <span>{faq.question}</span>
+                  <span
+                    className={`${styles.faqChevron} ${open ? styles.faqChevronOpen : ''}`}
+                  >
+                    ▼
+                  </span>
+                </button>
+                <div
+                  className={`${styles.faqAnswerWrapper} ${open ? styles.faqAnswerWrapperOpen : ''}`}
+                >
+                  <p className={styles.faqAnswer}>{faq.answer}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

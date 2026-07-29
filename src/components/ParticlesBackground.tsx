@@ -72,8 +72,10 @@ export function ParticlesBackground() {
     let width = 0;
     let height = 0;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let particles: Particle[] = [];
-    let scales: Scale[] = [];
+    // Diisi/dikurangi di tempat oleh fit(), tidak pernah diganti wholesale,
+    // supaya partikel yang sedang melayang tetap pada posisinya.
+    const particles: Particle[] = [];
+    const scales: Scale[] = [];
     let rafId = 0;
     let color = themeColor();
     let reduced = prefersReduced.matches;
@@ -113,12 +115,37 @@ export function ParticlesBackground() {
       };
     }
 
-    function build() {
+    function targetCounts() {
       const area = width * height;
-      const pCount = Math.min(46, Math.max(18, Math.round(area / 40000)));
-      const sCount = Math.min(4, Math.max(2, Math.round(area / 420000)));
-      particles = Array.from({ length: pCount }, () => spawnParticle(false));
-      scales = Array.from({ length: sCount }, () => spawnScale(false));
+      return {
+        p: Math.min(46, Math.max(18, Math.round(area / 40000))),
+        s: Math.min(4, Math.max(2, Math.round(area / 420000))),
+      };
+    }
+
+    /**
+     * Menyesuaikan jumlah partikel tanpa mengacak yang sudah melayang.
+     * Partikel lama dipertahankan apa adanya; hanya kelebihannya yang dibuang
+     * dan kekurangannya yang ditambah, lalu yang terlanjur di luar bingkai
+     * baru digeser masuk. Dengan begitu perubahan ukuran tidak pernah terlihat
+     * sebagai "reset" di layar.
+     */
+    function fit() {
+      const { p: pCount, s: sCount } = targetCounts();
+
+      while (particles.length > pCount) particles.pop();
+      while (particles.length < pCount) particles.push(spawnParticle(false));
+      while (scales.length > sCount) scales.pop();
+      while (scales.length < sCount) scales.push(spawnScale(false));
+
+      for (const p of particles) {
+        if (p.x > width + 16) p.x = Math.random() * width;
+        if (p.y > height + 40) p.y = Math.random() * height;
+      }
+      for (const sc of scales) {
+        if (sc.x > width + sc.size * 2) sc.x = Math.random() * width;
+        if (sc.y > height + sc.size * 2) sc.y = Math.random() * height;
+      }
     }
 
     function resize() {
@@ -129,6 +156,12 @@ export function ParticlesBackground() {
       // until the next window resize. The ResizeObserver below re-runs this
       // as soon as a real size is available.
       if (w === 0 || h === 0) return;
+      // The ResizeObserver watches documentElement, so it also fires when the
+      // page merely grows taller (an FAQ item expanding, a card opening). The
+      // viewport itself has not changed then, so there is nothing to redraw:
+      // returning here is what keeps the particles from visibly jumping.
+      if (w === width && h === height) return;
+
       width = w;
       height = h;
       canvas.width = Math.floor(width * dpr);
@@ -136,7 +169,7 @@ export function ParticlesBackground() {
       canvas.style.width = `${width}px`;
       canvas.style.height = `${height}px`;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      build();
+      fit();
       // Paint at once so particles are on screen the moment layout settles.
       render();
     }

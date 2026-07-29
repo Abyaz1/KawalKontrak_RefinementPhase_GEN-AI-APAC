@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { ShieldCheckIcon } from '@/components/Icons';
 
 export const metadata: Metadata = {
   title: 'Halaman Tidak Ditemukan',
@@ -19,8 +20,8 @@ export default function NotFound() {
       textAlign: 'center',
       padding: '2rem',
     }}>
-      <div style={{ fontSize: '6rem', marginBottom: '0.5rem', lineHeight: 1 }}>
-        🛡️
+      <div style={{ marginBottom: '0.75rem', lineHeight: 1, color: 'var(--color-brand)' }}>
+        <ShieldCheckIcon size={72} strokeWidth={1.2} />
       </div>
       <h1 style={{
         fontSize: 'clamp(2rem, 5vw, 3rem)',

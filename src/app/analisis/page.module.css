@@ -233,6 +233,7 @@
   align-items: center;
   justify-content: center;
   font-size: 24px;
+  color: var(--color-brand, #1e3a8c);
 }
 
 .dropZoneText {
@@ -265,6 +266,13 @@
   margin-top: 12px;
 }
 
+.filePreviewIcon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  color: var(--color-brand, #1e3a8c);
+}
+
 .filePreviewName {
   flex: 1;
   font-size: 14px;
@@ -281,10 +289,13 @@
 }
 
 .fileRemoveBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--kk-red);
-  font-size: 18px;
+  font-size: 16px;
   cursor: pointer;
   padding: 4px;
   border-radius: 4px;
@@ -414,6 +425,7 @@
   align-items: center;
   justify-content: center;
   font-size: 42px;
+  color: var(--color-brand, #1e3a8c);
   animation: emptyPulse 3s ease-in-out infinite;
 }
 
@@ -554,6 +566,8 @@
 
 .errorIcon {
   font-size: 52px;
+  line-height: 0;
+  color: var(--kk-red, #ef4444);
 }
 
 .errorTitle {
@@ -1392,6 +1406,27 @@
   color: var(--color-neutral, #4b5563);
 }
 
+.photoGuideItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.photoGuideItem svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  margin-top: 5px;
+}
+
+.photoGuideOk {
+  color: var(--color-success, #10b981);
+}
+
+.photoGuideAvoid {
+  color: var(--color-danger, #ef4444);
+}
+
 /* ── Demo mode (FR-14) ── */
 .demoRow {
   margin-top: 14px;
@@ -1478,6 +1513,54 @@
   background: rgba(107, 114, 128, 0.12);
   color: var(--color-neutral, #4b5563);
   border-color: rgba(107, 114, 128, 0.3);
+}
+
+.engineBadge svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* ── Disclaimer tetap di bawah setiap hasil ── */
+.resultDisclaimer {
+  margin-top: 24px;
+  padding: 16px 18px;
+  border-radius: 10px;
+  border: 1px solid var(--color-border, #e5e7eb);
+  background: var(--color-surface-alt, rgba(107, 114, 128, 0.08));
+}
+
+.resultDisclaimerTitle {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-neutral, #4b5563);
+  margin-bottom: 8px;
+}
+
+.resultDisclaimerText {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.65;
+  color: var(--color-neutral-light, #6b7280);
+}
+
+.resultDisclaimerLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
+.resultDisclaimerLinks a {
+  color: var(--color-brand-light, #3b6fe0);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.resultDisclaimerLinks a:hover {
+  color: var(--color-brand, #1e3a8c);
 }
 
 /* ── Progressive disclosure (FR-11) ── */

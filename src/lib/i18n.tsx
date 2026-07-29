@@ -340,8 +340,8 @@ const id: Dictionary = {
     'Audit anti-halusinasi tidak dapat dijalankan untuk hasil ini — sitasi hukum belum terverifikasi otomatis. Periksa referensi pasal secara mandiri.',
   analysis_truncated_warning:
     'Kontrak Anda sangat panjang — hanya bagian awal yang dianalisis. Untuk hasil lengkap, pecah kontrak menjadi beberapa bagian.',
-  analysis_share_copied: '✅ Ringkasan hasil disalin!',
-  analysis_email_copied: '📋 Template email disalin!',
+  analysis_share_copied: 'Ringkasan hasil disalin!',
+  analysis_email_copied: 'Template email disalin!',
 
   stage_cache: 'Memeriksa cache analisis',
   stage_extractor: 'Mengurai klausul kontrak',
@@ -510,8 +510,8 @@ const en: Dictionary = {
     'The anti-hallucination audit could not run for this result — legal citations have not been auto-verified. Double-check the referenced articles yourself.',
   analysis_truncated_warning:
     'Your contract is very long — only the first part was analyzed. For complete results, split the contract into parts.',
-  analysis_share_copied: '✅ Result summary copied!',
-  analysis_email_copied: '📋 Email template copied!',
+  analysis_share_copied: 'Result summary copied!',
+  analysis_email_copied: 'Email template copied!',
 
   stage_cache: 'Checking analysis cache',
   stage_extractor: 'Parsing contract clauses',
