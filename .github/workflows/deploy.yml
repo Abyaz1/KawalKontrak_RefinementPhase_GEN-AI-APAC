@@ -1,0 +1,75 @@
+name: Deploy to Google Cloud Run
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  PROJECT_ID: kawalkontrak-genaiapac
+  REGION: asia-southeast1
+
+jobs:
+  deploy-backend:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Prepare Dockerfile
+        run: cp Dockerfile.backend Dockerfile
+
+      - name: Build and Push Backend Image
+        run: |
+          gcloud builds submit \
+            --tag asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/backend:latest .
+
+      - name: Deploy Backend to Cloud Run
+        run: |
+          gcloud run deploy kawalkontrak-backend \
+            --image asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/backend:latest \
+            --region ${{ env.REGION }} \
+            --update-env-vars BACKEND_SHARED_SECRET="kawalkontrak-rahasia-2026",GOOGLE_GENAI_USE_VERTEXAI=true,GOOGLE_CLOUD_PROJECT=kawalkontrak-genaiapac,GOOGLE_CLOUD_LOCATION=asia-southeast1,VERTEX_RAG_CORPUS=projects/332798833015/locations/asia-southeast1/ragCorpora/6917529027641081856
+
+  deploy-frontend:
+    name: Deploy Frontend
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Prepare Dockerfile
+        run: cp Dockerfile.frontend Dockerfile
+
+      - name: Build and Push Frontend Image
+        run: |
+          gcloud builds submit \
+            --tag asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/frontend:latest .
+
+      - name: Deploy Frontend to Cloud Run
+        run: |
+          gcloud run deploy kawalkontrak-frontend \
+            --image asia-southeast1-docker.pkg.dev/${{ env.PROJECT_ID }}/repo-kawalkontrak/frontend:latest \
+            --region ${{ env.REGION }} \
+            --allow-unauthenticated \
+            --set-env-vars PYTHON_BACKEND_URL="https://kawalkontrak-backend-332798833015.asia-southeast1.run.app",BACKEND_SHARED_SECRET="kawalkontrak-rahasia-2026"
