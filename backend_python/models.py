@@ -51,6 +51,23 @@ class LegalStatus(str, Enum):
     AMBIGU          = "AMBIGU"
 
 
+class ConfidenceLevel(str, Enum):
+    """
+    Tingkat keyakinan model terhadap penilaian sebuah klausul.
+
+    HIGH   — status hukum & sitasi pasal jelas dan eksplisit.
+    MEDIUM — indikasi cukup kuat, tapi ada nuansa/konteks yang bisa
+             menggeser kesimpulan (mis. tergantung definisi lain di kontrak).
+    LOW    — bahasa klausul terdengar berpotensi bermasalah secara linguistik
+             (mis. sepihak, tidak jelas, memberatkan pekerja) TETAPI tidak ada
+             pasal yang bisa disitasi dengan pasti dari korpus. Tetap WAJIB
+             ditampilkan ke pengguna — bukan alasan untuk didrop.
+    """
+    HIGH   = "HIGH"
+    MEDIUM = "MEDIUM"
+    LOW    = "LOW"
+
+
 # ── Sub-models (dipakai oleh beberapa model utama) ─────────────────────────
 
 class PasalReference(BaseModel):
@@ -112,6 +129,15 @@ class LegalMatchResult(BaseModel):
     status_hukum: LegalStatus = Field(
         description="Status hukum: SESUAI, MELANGGAR, TIDAK_DITEMUKAN, atau AMBIGU"
     )
+    confidence: ConfidenceLevel = Field(
+        default=ConfidenceLevel.MEDIUM,
+        description=(
+            "Keyakinan model atas status_hukum di atas. WAJIB diisi LOW jika "
+            "klausul terdengar berpotensi bermasalah secara bahasa namun tidak "
+            "ada pasal yang bisa disitasi dengan pasti — bukan alasan untuk "
+            "menandai TIDAK_DITEMUKAN dan berhenti di situ."
+        )
+    )
     referensi_uu: list[PasalReference] = Field(
         default_factory=list,
         description="Pasal-pasal UU yang relevan dengan klausul ini"
@@ -126,6 +152,7 @@ class MatchedClause(BaseModel):
     klausul: str
     topik: str
     status_hukum: LegalStatus
+    confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
     referensi_uu: list[PasalReference]
 
 
@@ -140,6 +167,15 @@ class RedFlagDraft(BaseModel):
         description="ID unik, contoh: 'RF_001'"
     )
     severity: Severity
+    confidence: ConfidenceLevel = Field(
+        default=ConfidenceLevel.MEDIUM,
+        description=(
+            "Keyakinan atas temuan ini. LOW berarti indikasi berasal dari "
+            "bahasa klausul semata (berpotensi sepihak/tidak jelas/memberatkan) "
+            "tanpa sitasi pasal yang pasti — tetap ditampilkan ke pengguna "
+            "sebagai 'perlu ditinjau lebih lanjut', bukan dihilangkan."
+        )
+    )
     pasal_kontrak: str = Field(
         description="Kutipan asli klausul bermasalah dari kontrak"
     )
@@ -159,6 +195,10 @@ class SafeClause(BaseModel):
     """Klausul yang telah dikonfirmasi sesuai dengan hukum ketenagakerjaan."""
     pasal_kontrak: str = Field(
         description="Kutipan asli klausul yang aman dari kontrak"
+    )
+    confidence: ConfidenceLevel = Field(
+        default=ConfidenceLevel.MEDIUM,
+        description="Keyakinan bahwa klausul ini benar-benar sesuai/aman."
     )
     terjemahan: str = Field(
         description="Penjelasan dalam bahasa awam mengapa klausul ini aman"
@@ -248,6 +288,7 @@ class RedFlag(BaseModel):
     """
     flag_id: str
     severity: Severity
+    confidence: ConfidenceLevel = ConfidenceLevel.MEDIUM
     pasal_kontrak: str
     potensi_masalah: str
     referensi_uu: list[PasalReference]
@@ -262,6 +303,11 @@ class ReviewClause(BaseModel):
     Memenuhi PRD FR-05: jika sistem tidak menemukan dasar hukum yang
     relevan, ia WAJIB menyatakan "tidak ditemukan referensi pasti" —
     bukan menghilangkan klausul tersebut secara diam-diam.
+
+    Catatan (perbaikan distribusi flag ambigu): item di sini SEKARANG
+    membawa `severity` dan `confidence` sendiri (bukan lagi bucket tanpa
+    tingkatan), supaya klausul "bahasa mencurigakan tapi sitasi lemah"
+    tidak terlihat setara dengan klausul yang murni di luar cakupan korpus.
     """
     pasal_kontrak: str = Field(
         description="Kutipan asli klausul dari kontrak"
@@ -274,6 +320,17 @@ class ReviewClause(BaseModel):
     )
     status: LegalStatus = Field(
         description="TIDAK_DITEMUKAN atau AMBIGU"
+    )
+    severity: Optional[Severity] = Field(
+        default=None,
+        description=(
+            "Perkiraan tingkat keparahan jika ternyata benar melanggar "
+            "(None jika benar-benar tidak ada indikasi apapun)."
+        )
+    )
+    confidence: ConfidenceLevel = Field(
+        default=ConfidenceLevel.LOW,
+        description="Keyakinan atas status di atas — biasanya LOW untuk item di bucket ini."
     )
 
 

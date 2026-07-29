@@ -11,6 +11,14 @@ export type RiskLevel = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 /** Severity level for individual red flags */
 export type Severity = 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
 
+/**
+ * How confident the analysis is in a given clause's classification.
+ * LOW means the finding is based on the clause's language/tone alone
+ * (e.g. one-sided, vague, or burdensome wording) without a definitive
+ * legal citation — still shown to the user, never silently dropped.
+ */
+export type Confidence = 'HIGH' | 'MEDIUM' | 'LOW';
+
 /** Types of user feedback on analysis results */
 export type FeedbackType =
   | 'accurate'
@@ -42,6 +50,8 @@ export interface RedFlag {
   flag_id: string;
   /** How severe this issue is */
   severity: Severity;
+  /** Confidence in this finding — LOW if based on wording alone, no definitive citation */
+  confidence?: Confidence;
   /** Excerpt from the contract clause */
   pasal_kontrak: string;
   /** Plain-language explanation of the danger */
@@ -62,6 +72,8 @@ export interface RedFlag {
 export interface SafeClause {
   /** Excerpt from the contract clause */
   pasal_kontrak: string;
+  /** Confidence that this clause is genuinely safe/compliant */
+  confidence?: Confidence;
   /** Plain-language translation of legal jargon */
   terjemahan: string;
   /** Optional legal references confirming compliance */
@@ -84,6 +96,10 @@ export interface ReviewClause {
   alasan: string;
   /** Legal-match status: 'TIDAK_DITEMUKAN' | 'AMBIGU' */
   status: string;
+  /** Estimated severity if this turns out to be a real violation (undefined = no indication at all) */
+  severity?: Severity;
+  /** Confidence in the status above — usually LOW for items in this bucket */
+  confidence?: Confidence;
 }
 
 // ── Contract Summary ─────────────────────────────────────────

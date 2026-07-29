@@ -57,6 +57,7 @@ from backend_python.config import MODEL_CORE, MODEL_LITE, corpus_mode
 from backend_python.models import (
     AnalysisMetadata,
     AnalysisResult,
+    ConfidenceLevel,
     ContractSummary,
     LegalStatus,
     RedFlag,
@@ -216,6 +217,8 @@ async def run_analysis_pipeline_stream(
                 topik=m.topik,
                 alasan=review_reason,
                 status=m.status_hukum,
+                severity=None,
+                confidence=m.confidence,
             )
             for m in matched
             if m.status_hukum == LegalStatus.TIDAK_DITEMUKAN
@@ -251,6 +254,11 @@ async def run_analysis_pipeline_stream(
                     topik=rejected.potensi_masalah,
                     alasan="Diturunkan dari Red Flag karena bukti regulasi kurang kuat menurut Verifier AI." if locale == "id" else "Downgraded from Red Flag due to inconclusive regulatory evidence.",
                     status=LegalStatus.AMBIGU,
+                    # Bawa severity asli & turunkan confidence ke LOW — klausul ini
+                    # tetap kelihatan tingkat keparahannya, bukan jadi bucket netral
+                    # tanpa informasi (perbaikan distribusi flag ambigu).
+                    severity=rejected.severity,
+                    confidence=ConfidenceLevel.LOW,
                 )
             )
 
@@ -270,6 +278,7 @@ async def run_analysis_pipeline_stream(
             RedFlag(
                 flag_id=draft.flag_id,
                 severity=draft.severity,
+                confidence=draft.confidence,
                 pasal_kontrak=draft.pasal_kontrak,
                 potensi_masalah=draft.potensi_masalah,
                 referensi_uu=draft.referensi_uu,

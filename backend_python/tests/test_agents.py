@@ -21,6 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from backend_python.models import (
+    ConfidenceLevel,
     ExtractedClause,
     LegalStatus,
     MatchedClause,
@@ -166,9 +167,15 @@ class TestLegalMatcher:
             ExtractedClause(klausul="Aman saja", topik="Cuti", perlu_perhatian_ekstra=False),
         ]
         client = _make_client(parsed_value=[])
-        # Klausul diproses (bukan difilter), model mengembalikan [] → hasil kosong
+        # Klausul diproses (bukan difilter). Model mengembalikan [] dianggap
+        # kegagalan (bukan "tidak ada temuan") — klausul TETAP disisipkan
+        # sebagai AMBIGU/confidence LOW, bukan hilang tanpa jejak (lihat
+        # perbaikan "semua klausul harus tertangkap").
         result = asyncio.run(match_laws(clauses, client, locale="id"))
-        assert result == []
+        assert len(result) == 1
+        assert result[0].klausul == "Aman saja"
+        assert result[0].status_hukum == LegalStatus.AMBIGU
+        assert result[0].confidence == ConfidenceLevel.LOW
 
 
 # ─── RG: Agent Risk-Grader ────────────────────────────────────────────────────

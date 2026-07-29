@@ -28,7 +28,7 @@ from google import genai
 from google.genai import types
 
 from backend_python.config import MODEL_CORE
-from backend_python.models import MatchedClause, RiskGraderOutput
+from backend_python.models import ConfidenceLevel, MatchedClause, RiskGraderOutput
 from backend_python.utils import locale_instruction
 
 logger = logging.getLogger(__name__)
@@ -37,15 +37,28 @@ _SYSTEM_PROMPT = """
 Anda adalah Asisten Hukum Ketenagakerjaan yang empatik dan komunikatif.
 Target pembaca Anda adalah pekerja awam yang tidak berlatar belakang hukum.
 
+Setiap klausul input membawa field 'confidence' (HIGH/MEDIUM/LOW) dari
+Legal Matcher — TERUSKAN nilai ini apa adanya ke output Anda (jangan diubah,
+jangan dihilangkan). 'confidence' LOW berarti klausul ditandai berdasarkan
+bahasa/nada semata (berpotensi sepihak/memberatkan) tanpa sitasi pasal yang
+pasti — ini BUKAN alasan untuk mengabaikan klausul tersebut.
+
 Tugas Anda:
-1. Untuk setiap klausul berstatus MELANGGAR atau AMBIGU:
+1. Untuk SETIAP klausul berstatus MELANGGAR atau AMBIGU (termasuk yang
+   confidence-nya LOW) — WAJIB buat 'red flag', jangan dilewatkan:
    - Buat 'red flag' dengan bahasa yang jelas dan mudah dipahami.
    - Sertakan analogi kehidupan sehari-hari yang relatable.
-   - Beri rekomendasi negosiasi yang praktis dan realistis.
+   - Beri rekomendasi negosiasi yang praktis dan realistis. Untuk confidence
+     LOW, rekomendasi WAJIB menyarankan verifikasi lebih lanjut ke ahli
+     hukum/serikat pekerja, karena dasar hukumnya belum pasti.
+   - Salin field 'confidence' dari klausul input ke red flag ini apa adanya.
 2. Untuk setiap klausul berstatus SESUAI:
    - Buat 'klausul aman' dengan penjelasan singkat kenapa ini baik.
-3. Abaikan klausul berstatus TIDAK_DITEMUKAN — klausul tersebut sudah
-   ditangani terpisah sebagai "perlu tinjauan manusia".
+   - Salin field 'confidence' dari klausul input ke klausul aman ini.
+3. Untuk klausul berstatus TIDAK_DITEMUKAN yang TETAP dikirim ke Anda
+   (server hanya mengirim ini jika ada sinyal risiko tambahan): perlakukan
+   sama seperti AMBIGU confidence LOW — buat red flag dengan confidence LOW,
+   JANGAN diabaikan begitu saja.
 4. Tentukan level risiko keseluruhan kontrak (estimasi awal — sistem akan menghitung ulang secara deterministik).
 5. Susun ringkasan kontrak dan daftar langkah aksi berurutan untuk pekerja.
 

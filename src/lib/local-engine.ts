@@ -1,5 +1,55 @@
 import { redFlagPatterns } from './red-flag-patterns';
-import { AnalysisResult, RedFlag, SafeClause, RiskLevel } from '@/types';
+import { AnalysisResult, RedFlag, SafeClause, ReviewClause, RiskLevel } from '@/types';
+
+/**
+ * Pola klausul AMAN untuk fallback lokal (tanpa AI).
+ *
+ * CATATAN AUDIT: sebelumnya hanya ada 1 pola ('bpjs') dibanding 20+ pola
+ * red flag — asimetri ini membuat fallback lokal (aktif saat backend Python
+ * tidak terjangkau/timeout) TERLIHAT seolah kontrak jarang punya klausul
+ * aman, padahal itu keterbatasan detektor, bukan isi kontrak. Semua entri di
+ * bawah diberi confidence 'MEDIUM' (bukan 'HIGH') karena keyword-matching
+ * sederhana tidak memverifikasi konteks kalimat secara penuh.
+ */
+const localSafeClausePatterns: {
+  keyword: string;
+  terjemahan: string;
+  referensi: SafeClause['referensi'];
+}[] = [
+  {
+    keyword: 'bpjs',
+    terjemahan: 'Anda terdaftar dalam asuransi kesehatan dan ketenagakerjaan resmi.',
+    referensi: [],
+  },
+  {
+    keyword: 'uang kompensasi',
+    terjemahan: 'Kontrak menyebutkan hak kompensasi PKWT saat kontrak berakhir, sesuai ketentuan.',
+    referensi: [
+      { peraturan: 'PP 35/2021', pasal: 'Pasal 15-16', judul: 'Kompensasi PKWT', ketentuan_relevan: 'Kompensasi diberikan saat PKWT berakhir.' },
+    ],
+  },
+  {
+    keyword: 'cuti tahunan',
+    terjemahan: 'Kontrak mencantumkan hak cuti tahunan pekerja.',
+    referensi: [
+      { peraturan: 'UU 6/2023 (Cipta Kerja)', pasal: 'Pasal 79', judul: 'Waktu Istirahat dan Cuti', ketentuan_relevan: 'Pekerja berhak atas cuti tahunan setelah masa kerja 12 bulan.' },
+    ],
+  },
+  {
+    keyword: 'upah lembur',
+    terjemahan: 'Kontrak menyebutkan pembayaran upah lembur, sesuai kewajiban pengusaha.',
+    referensi: [
+      { peraturan: 'UU 6/2023 (Cipta Kerja)', pasal: 'Pasal 78', judul: 'Upah Kerja Lembur', ketentuan_relevan: 'Pengusaha wajib membayar upah lembur bagi pekerja yang bekerja melebihi jam kerja.' },
+    ],
+  },
+  {
+    keyword: '40 jam',
+    terjemahan: 'Jam kerja dalam kontrak sesuai batas maksimal 40 jam/minggu yang diatur undang-undang.',
+    referensi: [
+      { peraturan: 'UU 6/2023 (Cipta Kerja)', pasal: 'Pasal 77', judul: 'Waktu Kerja', ketentuan_relevan: 'Waktu kerja paling lama 40 jam dalam 1 minggu.' },
+    ],
+  },
+];
 
 export const DISCLAIMER_TEXT_ID =
   'Analisis ini dihasilkan oleh Kecerdasan Buatan (AI) untuk tujuan literasi dan edukasi hukum, BUKAN nasihat hukum yang mengikat. Untuk sengketa serius, hubungi LBH Indonesia (021-315-1405), konsultan hukum profesional, atau serikat pekerja di organisasi Anda.';
@@ -64,6 +114,11 @@ export async function analyzeContractLocal(contractText: string, locale: string 
       redFlags.push({
         flag_id: pattern.id,
         severity: pattern.severity,
+        // Keyword/regex match = bahasa eksplisit ditemukan persis, jadi confidence
+        // tinggi bahwa POLA cocok — tapi tetap tandai MEDIUM karena mesin ini tidak
+        // memverifikasi konteks kalimat penuh seperti model AI (mis. negasi/pengecualian
+        // di kalimat lain bisa terlewat).
+        confidence: 'MEDIUM',
         pasal_kontrak,
         potensi_masalah: pattern.why_dangerous,
         referensi_uu: pattern.pasal_references,
@@ -76,13 +131,33 @@ export async function analyzeContractLocal(contractText: string, locale: string 
 
   const risk_level = calculateRiskLevel(redFlags);
 
-  if (normalizedText.includes('bpjs')) {
-    safeClauses.push({
-      pasal_kontrak: 'Perusahaan mendaftarkan pekerja pada program BPJS.',
-      terjemahan: 'Anda terdaftar dalam asuransi kesehatan dan ketenagakerjaan resmi.',
-      referensi: [],
-    });
+  for (const safePattern of localSafeClausePatterns) {
+    if (normalizedText.includes(safePattern.keyword)) {
+      safeClauses.push({
+        pasal_kontrak: `Klausul terkait "${safePattern.keyword}" ditemukan dalam dokumen.`,
+        confidence: 'MEDIUM',
+        terjemahan: safePattern.terjemahan,
+        referensi: safePattern.referensi,
+      });
+    }
   }
+
+  // Fallback lokal ini TIDAK melakukan pemeriksaan pasal-demi-pasal seperti
+  // pipeline AI penuh — jadi ia tidak bisa menjamin semua klausul kontrak
+  // sudah tertangkap. Beri tahu pengguna secara eksplisit (bukan diam-diam
+  // menyembunyikan keterbatasan), konsisten dengan prinsip FR-05.
+  const reviewClauses: ReviewClause[] = [
+    {
+      pasal_kontrak: '(Seluruh dokumen)',
+      topik: 'Keterbatasan mesin cadangan',
+      alasan:
+        locale === 'en'
+          ? 'This result was produced by a simplified local pattern-matching engine (the full AI pipeline was unreachable). It only checks for known keyword patterns and cannot guarantee every clause — safe or problematic — was caught. Consider re-running the analysis, or have a human/legal aid review the full contract.'
+          : 'Hasil ini dibuat oleh mesin pencocokan pola sederhana (pipeline AI penuh sedang tidak terjangkau). Mesin ini hanya memeriksa pola kata kunci yang sudah dikenal dan tidak bisa menjamin semua klausul — aman maupun bermasalah — tertangkap. Sebaiknya coba analisis ulang, atau minta tinjauan manusia/LBH untuk kontrak lengkap ini.',
+      status: 'AMBIGU',
+      confidence: 'LOW',
+    },
+  ];
 
   const hash = await hashText(contractText);
 
@@ -93,7 +168,7 @@ export async function analyzeContractLocal(contractText: string, locale: string 
     contract_hash: hash,
     red_flags: redFlags,
     klausul_aman: safeClauses,
-    klausul_tinjauan: [],
+    klausul_tinjauan: reviewClauses,
     ringkasan: {
       jenis: 'Kontrak Kerja (Umum)',
       status: risk_level === 'LOW' ? 'Aman' : 'Membutuhkan Peninjauan',

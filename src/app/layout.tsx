@@ -76,8 +76,8 @@ export const metadata: Metadata = {
     images: ["/og-image.png"],
   },
   icons: {
-    icon: [{ url: "/favicon.ico", sizes: "any" }],
-    apple: "/apple-touch-icon.png",
+    icon: [{ url: "/logo.png", sizes: "any" }],
+    apple: "/logo.png",
   },
   robots: {
     index: true,
