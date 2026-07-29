@@ -297,6 +297,72 @@ export default function HomePage() {
     );
   };
 
+  /* ── Menyamakan tinggi kartu "Why We Built This" ──
+     Kartu harus sama tinggi saat tertutup, tetapi tetap saling bebas: membuka
+     satu kartu tidak boleh ikut meninggikan dua lainnya. `align-items: stretch`
+     memberi yang pertama tapi merusak yang kedua, dan `min-height` tetap tidak
+     bisa dipakai karena tinggi teks bergantung pada lebar kolom (di 920px kartu
+     tertinggi 360px, di 1280px hanya 258px). Jadi tingginya diukur.
+
+     Yang disamakan adalah .factMain (judul + ringkasan), bukan seluruh kartu,
+     karena tinggi .factMain tidak berubah saat kartu dibuka. Detail yang muncul
+     saat dibuka menempel di bawahnya dan hanya menambah tinggi kartu itu saja. */
+  const factsGridRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const grid = factsGridRef.current;
+    if (!grid) return;
+
+    const mains = Array.from(
+      grid.querySelectorAll<HTMLElement>('[data-fact-main]'),
+    );
+    if (mains.length === 0) return;
+
+    const multiColumn = window.matchMedia('(min-width: 901px)');
+    let lastWidth = 0;
+
+    const equalise = () => {
+      // Ukur ulang dari nol; tanpa reset, hasil pengukuran sebelumnya ikut
+      // terbaca dan tingginya hanya bisa bertambah, tidak pernah menyusut.
+      for (const m of mains) m.style.minHeight = '';
+
+      // Satu kolom: kartu selebar layar, menyamakan tinggi hanya menyisakan
+      // ruang kosong. Biarkan setinggi isinya.
+      if (!multiColumn.matches) return;
+
+      let tallest = 0;
+      for (const m of mains) tallest = Math.max(tallest, m.offsetHeight);
+      for (const m of mains) m.style.minHeight = `${tallest}px`;
+    };
+
+    equalise();
+    lastWidth = grid.offsetWidth;
+
+    // Hanya perubahan lebar yang mengubah pembungkusan teks. Mengabaikan
+    // perubahan tinggi juga memutus umpan balik: equalise() sendiri mengubah
+    // tinggi grid, yang kalau ditanggapi akan memicu dirinya sendiri.
+    const observer = new ResizeObserver(() => {
+      const width = grid.offsetWidth;
+      if (width === lastWidth) return;
+      lastWidth = width;
+      equalise();
+    });
+    observer.observe(grid);
+
+    // Teks bergeser saat webfont selesai dimuat, sehingga pengukuran pertama
+    // bisa memakai metrik font sementara.
+    let cancelled = false;
+    document.fonts?.ready.then(() => {
+      if (!cancelled) equalise();
+    });
+
+    return () => {
+      cancelled = true;
+      observer.disconnect();
+      for (const m of mains) m.style.minHeight = '';
+    };
+  }, [locale]);
+
   const localizedFeatures = [
     { title: t.feature_1_title, description: t.feature_1_desc },
     { title: t.feature_2_title, description: t.feature_2_desc },
@@ -519,7 +585,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className={styles.testimonialsGrid}>
+          <div className={styles.testimonialsGrid} ref={factsGridRef}>
             {backgroundFacts.map((fact, index) => {
               const open = openFacts.includes(index);
               return (
@@ -537,15 +603,19 @@ export default function HomePage() {
                   }}
                   aria-expanded={open}
                 >
-                  <div className={styles.factHead}>
-                    <h3 className={styles.factTitle}>
-                      {locale === 'id' ? fact.titleId : fact.titleEn}
-                    </h3>
-                    <span className={`${styles.factChevron} ${open ? styles.factChevronOpen : ''}`}>▾</span>
+                  {/* Bagian yang selalu tampil. Tingginya tidak terpengaruh
+                      status buka/tutup, jadi inilah yang disamakan. */}
+                  <div className={styles.factMain} data-fact-main>
+                    <div className={styles.factHead}>
+                      <h3 className={styles.factTitle}>
+                        {locale === 'id' ? fact.titleId : fact.titleEn}
+                      </h3>
+                      <span className={`${styles.factChevron} ${open ? styles.factChevronOpen : ''}`}>▾</span>
+                    </div>
+                    <p className={styles.factDesc}>
+                      {locale === 'id' ? fact.descId : fact.descEn}
+                    </p>
                   </div>
-                  <p className={styles.factDesc}>
-                    {locale === 'id' ? fact.descId : fact.descEn}
-                  </p>
                   {open && (
                     <div className={styles.factDetail}>
                       <p className={styles.factDetailText}>

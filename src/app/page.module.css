@@ -981,13 +981,24 @@
   display: inline-block;
   font-size: 0.85rem;
   font-weight: 600;
-  color: var(--color-primary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   margin-bottom: var(--space-sm);
   padding: 0.35rem 1rem;
-  background: var(--color-primary-50);
+  /* Mode terang: pil biru tua solid dengan teks putih, memakai biru merek yang
+     sama dengan header — bukan tint transparan, supaya label tiap seksi berdiri
+     tegas di atas latar berpartikel yang tembus pandang. */
+  color: #ffffff;
+  background: var(--color-brand);
   border-radius: var(--radius-full);
+}
+
+/* Mode gelap tetap memakai tint tipis: di latar gelap, blok biru tua solid
+   justru hilang, dan `--color-brand` di sini sudah berubah menjadi indigo
+   terang (#6E8DF0) yang kontrasnya buruk dengan teks putih. */
+:global([data-theme='dark']) .sectionSubtitle {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
 }
 
 .sectionTitle {
@@ -1178,10 +1189,10 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: var(--space-xl);
-  /* `stretch` (bawaan grid) menyamakan tinggi ketiga kartu dengan kartu
-     tertinggi, sehingga panjang teks yang berbeda antar kartu — dan antara
-     Bahasa Indonesia dan Inggris — tidak lagi membuat tepinya bergerigi. */
-  align-items: stretch;
+  /* `start`, bukan `stretch`: setiap kartu berdiri sendiri, sehingga membuka
+     satu kartu tidak ikut menarik tinggi dua kartu lainnya. Keseragaman saat
+     tertutup diurus oleh `min-height` pada .factCard, bukan oleh grid. */
+  align-items: start;
 }
 
 /* ---- "Why We Built This" — expandable fact cards ---- */
@@ -1218,6 +1229,15 @@
 .factCardOpen {
   box-shadow: var(--shadow-lg);
   border-left-color: var(--color-brand-accent);
+}
+
+/* Bagian kartu yang selalu tampil. Tingginya disamakan antar kartu lewat
+   `min-height` yang dihitung di src/app/page.tsx, karena tinggi teks
+   bergantung pada lebar kolom dan tidak bisa dipatok lewat CSS saja. */
+.factMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
 }
 
 .factHead {
@@ -1288,10 +1308,9 @@
 }
 
 .factToggleHint {
-  /* Dipatok ke dasar kartu supaya sisa ruang dari penyamaan tinggi jatuh di
-     antara teks dan petunjuk ini, bukan menggantung di bawahnya. */
-  margin-top: auto;
-  padding-top: var(--space-xs);
+  /* Sisa ruang dari penyamaan tinggi ditampung di dalam .factMain, sehingga
+     petunjuk ini otomatis sejajar antar kartu tanpa perlu dipatok. */
+  margin-top: var(--space-xs);
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-primary);
