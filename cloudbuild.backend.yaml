@@ -1,0 +1,28 @@
+steps:
+  # 1. Build image Docker
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - '-t'
+      - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/backend:latest'
+      - '-f'
+      - backend_python/Dockerfile
+      - .
+
+  # 2. Deploy ke Cloud Run (otomatis mempertahankan env vars yang sudah ada)
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - kawalkontrak-backend
+      - '--image'
+      - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/backend:latest'
+      - '--region'
+      - asia-southeast1
+
+images:
+  - 'asia-southeast1-docker.pkg.dev/kawalkontrak-genaiapac/repo-kawalkontrak/backend:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
