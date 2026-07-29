@@ -249,10 +249,8 @@ async def analyze_contract(request: AnalyzeRequest) -> AnalysisResult:
         f"region='{request.region}', locale='{request.locale}'"
     )
 
-    assert config.GEMINI_API_KEY is not None, "GEMINI_API_KEY is required"
     result = await run_analysis_pipeline(
         contract_text=request.contractText,
-        api_key=config.GEMINI_API_KEY,
         locale=request.locale,
     )
 
@@ -287,10 +285,8 @@ async def analyze_contract_stream(request: AnalyzeRequest) -> StreamingResponse:
     )
 
     async def event_generator():
-        assert config.GEMINI_API_KEY is not None, "GEMINI_API_KEY is required"
         async for event in run_analysis_pipeline_stream(
             contract_text=request.contractText,
-            api_key=config.GEMINI_API_KEY,
             locale=request.locale,
         ):
             yield json.dumps(event, ensure_ascii=False) + "\n"
